@@ -14,7 +14,10 @@ def train(model, train_loader, val_loader, num_epochs=10, lr=0.005, device="cuda
         total_loss = 0
         print(f"[INFO] Epoch {epoch+1}/{num_epochs} 시작")
         
-        for images, targets in train_loader:
+        for step, (images, targets) in enumerate(train_loader):  
+            if step % 20 == 0:
+                print(f"[INFO] Step {step+1}/{len(train_loader)} 진행 중...")  
+            
             images = list(image.to(device) for image in images)
             targets = [{"boxes": t["boxes"].to(device), "labels": t["labels"].to(device)} for t in targets]
             
