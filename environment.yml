@@ -20,3 +20,4 @@ dependencies:
       - torchsummary
       - tensorboard
       - opencv-python
+      - albumentations  # 데이터 증강 라이브러리 추가
