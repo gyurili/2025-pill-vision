@@ -1,6 +1,7 @@
 from pathlib import Path
 from dataset import get_dataloaders, TestDataset
-from src import visualize_sample
+from src import visualize_sample, CATEGORY_TO_DRUG
+from src.config import df_exploded
 
 if __name__ == "__main__":
     """스크립트 실행 시 데이터로더를 생성하고 검증"""
@@ -18,9 +19,6 @@ if __name__ == "__main__":
     # 데이터 확인
     train_batch = next(iter(train_loader))
     val_batch = next(iter(val_loader))
-
-    print(f"훈련 배치 크기: {len(train_batch[0])}")
-    print(f"검증 배치 크기: {len(val_batch[0])}")
     
     # 이미지와 타겟 데이터 분리
     image, target, image_vir = train_batch[0][0], train_batch[1][0], train_batch[2][0]
