@@ -19,16 +19,21 @@ def convert_bbox_format(bboxes):
     """
     new_bboxes = []
     for bbox in bboxes:
-        x_min, y_min, width, height = bbox[:4]
-        x_max = x_min + width
-        y_max = y_min + height
+        if len(bbox) < 4:
+            print(f"🚨 잘못된 bbox 데이터: {bbox}")
+            continue  # 잘못된 bbox는 건너뛰기
         
-        if y_max <= y_min:
-            print(f"경고: 잘못된 bbox 수정됨: {bbox}")
-            y_max = y_min + abs(height)
+        x_min, y_min, width, height = bbox[:4]
+        x_max = x_min + max(1, width)  # width가 0 이하일 경우 최소 1로 설정
+        y_max = y_min + max(1, height)  # height가 0 이하일 경우 최소 1로 설정
+        
+        if y_max <= y_min or x_max <= x_min:
+            print(f"🚨 경고: 잘못된 bbox 수정됨: {bbox}")
+            continue  # 잘못된 bbox 건너뛰기
         
         new_bboxes.append([x_min, y_min, x_max, y_max])
     return new_bboxes
+
 
 class PillDetectionDataset(Dataset):
     """
@@ -79,11 +84,11 @@ class PillDetectionDataset(Dataset):
         
         image = cv2.imread(img_path)
         if image is None:
-            raise FileNotFoundError(f"이미지 파일을 찾을 수 없습니다: {img_path}")
+            raise FileNotFoundError(f"🚨 이미지 파일을 찾을 수 없습니다: {img_path}")
         
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-        # 바운딩 박스 변환 적용 (COCO → Pascal VOC 변환)
+        # 바운딩 박스 변환 적용
         boxes = ast.literal_eval(row["bbox"])
         boxes = convert_bbox_format(boxes)
 
@@ -91,18 +96,25 @@ class PillDetectionDataset(Dataset):
 
         # 정규화
         h, w, _ = image.shape
-        norm_boxes = [[x_min / w, y_min / h, x_max / w, y_max / h] for x_min, y_min, x_max, y_max in boxes]
+        norm_boxes = [[max(0, min(1, x_min / w)), max(0, min(1, y_min / h)),
+                    max(0, min(1, x_max / w)), max(0, min(1, y_max / h))]
+                    for x_min, y_min, x_max, y_max in boxes]
 
-        # 데이터 증강 적용
+        # 디버깅용 print
+        print(f"[DEBUG] Original bbox: {boxes}")
+        print(f"[DEBUG] Normalized bbox: {norm_boxes}")
+
         transformed = self.transforms(image=image, bboxes=norm_boxes, category_id=labels)
         image = transformed["image"]
-        
-        # 정규화 해제
-        boxes = torch.tensor([[x_min * w, y_min * h, x_max * w, y_max * h] for x_min, y_min, x_max, y_max in transformed["bboxes"]], dtype=torch.float32)
+
+        # 정규화 해제 (다시 원래 크기로 변환)
+        boxes = torch.tensor([[x_min * w, y_min * h, x_max * w, y_max * h] 
+                            for x_min, y_min, x_max, y_max in transformed["bboxes"]], dtype=torch.float32)
         labels = torch.tensor(transformed["category_id"], dtype=torch.int64)
 
         target = {"boxes": boxes, "labels": labels}
         return image, target
+
 
 
 class TestDataset(Dataset):
