@@ -12,6 +12,7 @@ def train(model, train_loader, val_loader, num_epochs=10, lr=0.005, device="cuda
     for epoch in range(num_epochs):
         model.train()
         total_loss = 0
+        print(f"[INFO] Epoch {epoch+1}/{num_epochs} 시작")
         
         for images, targets in train_loader:
             images = list(image.to(device) for image in images)

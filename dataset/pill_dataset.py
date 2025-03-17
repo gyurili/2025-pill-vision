@@ -111,7 +111,7 @@ class TestDataset(Dataset):
     """
     
     def __init__(self, image_dir, transform=None):
-         """
+        """
         Args:
             image_dir (str): 테스트 이미지가 저장된 폴더 경로
             transform (albumentations.Compose, optional): 이미지 변환을 위한 Albumentations 변환 객체
