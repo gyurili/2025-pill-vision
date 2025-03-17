@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 import cv2
+from dataset import convert_bbox_format
 
-def visualize_sample(image, image_vis, target, class_id=False):
+def visualize_sample(image, image_vis, target, class_id=False, bbox_convert=True):
     """
     바운딩 박스를 시각화하는 함수.
     Args:
@@ -12,6 +13,9 @@ def visualize_sample(image, image_vis, target, class_id=False):
     """
     boxes = target["boxes"].cpu().numpy().astype(int)
     labels = target["labels"].cpu().numpy()
+    
+    if bbox_convert:
+        boxes = convert_bbox_format(boxes)
 
     # 바운딩 박스 그리기
     for i, (box, label) in enumerate(zip(boxes, labels)):

@@ -7,29 +7,39 @@ from albumentations.pytorch import ToTensorV2
 from torch.utils.data import Dataset
 
 
-def convert_bbox_format(bboxes):
+def convert_bbox_format(bboxes, to_format="pascal"):
     """
-    COCO 형식 [x, y, width, height] → Pascal VOC 형식 [x_min, y_min, x_max, y_max] 변환
+    바운딩 박스 변환 함수.
+    COCO <-> Pascal VOC 형식 변환 지원.
 
     Args:
-        bboxes (list): COCO 형식의 바운딩 박스 리스트
+        bboxes (list): 원본 바운딩 박스 리스트
+        to_format (str): "pascal" 또는 "coco" 지정
 
     Returns:
-        list: Pascal VOC 형식으로 변환된 바운딩 박스 리스트
+        list: 변환된 바운딩 박스 리스트
     """
-    new_bboxes = []
+    converted_bboxes = []
+    
     for bbox in bboxes:
-        x_min, y_min, width, height = bbox[:4]
-        x_max = x_min + width
-        y_max = y_min + height
+        if to_format == "pascal":
+            # COCO (x, y, w, h) → Pascal VOC (x_min, y_min, x_max, y_max)
+            x_min, y_min, width, height = bbox
+            x_max = x_min + width
+            y_max = y_min + height
+            converted_bboxes.append([x_min, y_min, x_max, y_max])
+        
+        elif to_format == "coco":
+            # Pascal VOC (x_min, y_min, x_max, y_max) → COCO (x, y, w, h)
+            x_min, y_min, x_max, y_max = bbox
+            width = x_max - x_min
+            height = y_max - y_min
+            converted_bboxes.append([x_min, y_min, width, height])
+        
+        else:
+            raise ValueError("Invalid format. Use 'pascal' or 'coco'.")
 
-        if y_max <= y_min:
-            print(f"경고: 잘못된 bbox 수정됨: {bbox}")
-            y_max = y_min + abs(height)
-
-        new_bboxes.append([x_min, y_min, x_max, y_max])
-
-    return new_bboxes
+    return converted_bboxes
 
 
 class PillDetectionDataset(Dataset):
@@ -37,7 +47,7 @@ class PillDetectionDataset(Dataset):
     객체 탐지 데이터셋 (Faster R-CNN, YOLO 등에서 사용 가능)
     """
 
-    def __init__(self, df, image_dir, train=True):
+    def __init__(self, df, image_dir, train=True, bbox_convert=False):
         """
         객체 탐지 데이터셋을 초기화합니다.
 
@@ -49,6 +59,7 @@ class PillDetectionDataset(Dataset):
         self.df = df
         self.image_dir = image_dir
         self.train = train
+        self.bbox_convert = bbox_convert
         self.transforms = self.get_transforms()
 
     def __len__(self):
@@ -86,7 +97,6 @@ class PillDetectionDataset(Dataset):
 
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-        # 바운딩 박스 변환 적용 (COCO → Pascal VOC 변환)
         boxes = eval(row["bbox"])
         boxes = convert_bbox_format(boxes)
         labels = eval(row["category_id"])
@@ -102,6 +112,10 @@ class PillDetectionDataset(Dataset):
         image = transformed["image"]
         boxes = torch.tensor(transformed["bboxes"], dtype=torch.float32)
         labels = torch.tensor(transformed["category_id"], dtype=torch.int64)
+        
+        if self.bbox_convert == False:
+            boxes = convert_bbox_format(boxes, "coco")
+            boxes = torch.tensor(boxes, dtype=torch.float32)
 
         target = {
             "boxes": boxes,
@@ -137,7 +151,7 @@ class TestDataset(Dataset):
 
         image = cv2.imread(img_path)
         if image is None:
-            raise FileNotFoundError(f"🚨 이미지 파일을 찾을 수 없습니다: {img_path}")
+            raise FileNotFoundError(f"이미지 파일을 찾을 수 없습니다: {img_path}")
 
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 

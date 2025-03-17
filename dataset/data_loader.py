@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 from .pill_dataset import PillDetectionDataset
 
 
-def get_dataloaders(csv_path, image_dir, batch_size=8, val_split=0.2, shuffle=True):
+def get_dataloaders(csv_path, image_dir, bbox_convert=False, batch_size=8, val_split=0.2, shuffle=True):
     """
     훈련 데이터와 검증 데이터로 나누어 데이터로더를 생성합니다.
 
@@ -24,8 +24,8 @@ def get_dataloaders(csv_path, image_dir, batch_size=8, val_split=0.2, shuffle=Tr
     train_df, val_df = train_test_split(df, test_size=val_split, random_state=42, shuffle=True)
 
     # 데이터셋 생성
-    train_dataset = PillDetectionDataset(train_df, image_dir, train=True)
-    val_dataset = PillDetectionDataset(val_df, image_dir, train=False)
+    train_dataset = PillDetectionDataset(train_df, image_dir, train=True, bbox_convert=bbox_convert)
+    val_dataset = PillDetectionDataset(val_df, image_dir, train=False, bbox_convert=bbox_convert)
 
     # 데이터로더 생성
     train_loader = DataLoader(
