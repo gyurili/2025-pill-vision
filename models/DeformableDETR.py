@@ -11,7 +11,6 @@ class DeformableAttention(nn.Module):
         self.deform_conv = DeformConv2d(hidden_dim, hidden_dim, kernel_size=3, padding=1)
     
     def forward(self, x):
-        B, C, H, W = x.shape
         offset = self.conv_offset(x)
         x = self.deform_conv(x, offset)
         x = x.flatten(2).permute(2, 0, 1)  # Reshape for transformer
