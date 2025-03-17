@@ -1,5 +1,5 @@
 from pathlib import Path
-from dataset import get_dataloaders
+from dataset import get_dataloaders, TestDataset
 from src import visualize_sample
 
 if __name__ == "__main__":
@@ -9,9 +9,11 @@ if __name__ == "__main__":
     BASE_DIR = Path(__file__).resolve().parent
     CSV_PATH = BASE_DIR / "./data/image_annotations.csv"
     IMAGE_DIR = BASE_DIR / "./data/train_images"
+    TEST_DIR = BASE_DIR / "./data/test_images"
 
     # 훈련 & 검증 데이터 로더 생성
     train_loader, val_loader = get_dataloaders(CSV_PATH, IMAGE_DIR, batch_size=8, val_split=0.2)
+    test_dataset = TestDataset(TEST_DIR)
 
     # 데이터 확인
     train_batch = next(iter(train_loader))
@@ -24,4 +26,4 @@ if __name__ == "__main__":
     image, target, image_vir = train_batch[0][0], train_batch[1][0], train_batch[2][0]
 
     # 시각화 실행
-    visualize_sample(image, image_vir, target)
+    visualize_sample(image, image_vir, target, True)

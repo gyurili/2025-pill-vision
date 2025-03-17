@@ -109,3 +109,48 @@ class PillDetectionDataset(Dataset):
         }
 
         return image, target, image_vis
+
+
+class TestDataset(Dataset):
+    """
+    주석이 없는 테스트 데이터셋을 로드하는 클래스
+    """
+
+    def __init__(self, image_dir, transform=None):
+        """
+        Args:
+            image_dir (str): 테스트 이미지가 저장된 폴더 경로
+            transform (albumentations.Compose, optional): 이미지 변환을 위한 Albumentations 변환 객체
+        """
+        self.image_dir = image_dir
+        self.image_files = [f for f in os.listdir(image_dir) if f.lower().endswith((".jpg", ".jpeg", ".png"))]
+        self.transform = transform if transform else self.default_transforms()
+
+    def __len__(self):
+        """ 데이터셋 크기 반환 """
+        return len(self.image_files)
+
+    def __getitem__(self, idx):
+        """ 이미지 로드 및 변환 """
+        file_name = self.image_files[idx]
+        img_path = os.path.join(self.image_dir, file_name)
+
+        image = cv2.imread(img_path)
+        if image is None:
+            raise FileNotFoundError(f"🚨 이미지 파일을 찾을 수 없습니다: {img_path}")
+
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        # 이미지 변환 적용
+        transformed = self.transform(image=image)
+        image = transformed["image"]
+
+        return image, file_name  # 라벨이 없으므로 파일명만 반환
+
+    def default_transforms(self):
+        """ 기본 이미지 변환 설정 """
+        return A.Compose([
+            A.Resize(640, 640),
+            A.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
+            ToTensorV2()
+        ])
