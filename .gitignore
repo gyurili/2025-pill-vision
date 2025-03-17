@@ -47,7 +47,7 @@ htmlcov/
 .tox/
 .nox/
 .coverage
-.coverage.*
+.coverage.*  
 .cache
 nosetests.xml
 coverage.xml
@@ -137,10 +137,10 @@ poetry.toml
 # LSP config files
 pyrightconfig.json
 
-# MNIST dataset
-data/mnist/
-data/MNIST/
-
 # System files
 .DS_Store 
 
+# 데이터 폴더 무시
+data/train_images/
+data/train_annotations/
+data/test_images/
