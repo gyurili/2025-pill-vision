@@ -1,7 +1,6 @@
 from pathlib import Path
 from dataset import get_dataloaders, TestDataset
-from src import visualize_sample, CATEGORY_TO_DRUG
-from src.config import df_exploded
+from src import visualize_sample
 
 if __name__ == "__main__":
     """스크립트 실행 시 데이터로더를 생성하고 검증"""
