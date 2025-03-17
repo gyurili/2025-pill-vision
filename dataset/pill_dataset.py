@@ -1,6 +1,7 @@
 import os
 import cv2
 import torch
+import numpy as np
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 from torch.utils.data import Dataset
@@ -54,41 +55,31 @@ class PillDetectionDataset(Dataset):
         """데이터셋의 길이를 반환합니다."""
         return len(self.df)
 
-    def get_transforms(self):
+    def get_transforms(train=True):
         """
-        Albumentations 기반의 이미지 변환을 정의합니다.
-
-        Returns:
-            A.Compose: 이미지 변환 파이프라인
+        Albumentations 변환 함수
+        :param train: True일 경우 데이터 증강 적용, False면 검증용 변환만 적용
+        :return: Albumentations 변환 객체
         """
-        if self.train:
+        if train:
             return A.Compose([
                 A.Resize(640, 640),
                 A.HorizontalFlip(p=0.5),
-                A.RandomBrightnessContrast(p=0.2),
                 A.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
                 ToTensorV2()
-            ], bbox_params=A.BboxParams(format="pascal_voc", label_fields=["category_id"]))
-        return A.Compose([
-            A.Resize(640, 640),
-            A.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
-            ToTensorV2()
-        ], bbox_params=A.BboxParams(format="pascal_voc", label_fields=["category_id"]))
+            ], bbox_params=A.BboxParams(format="pascal_voc", label_fields=["category_id"]))  # bbox와 label을 함께 변환하도록 설정
+        else:
+            return A.Compose([
+                A.Resize(640, 640),
+                A.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
+                ToTensorV2()
+            ], bbox_params=A.BboxParams(format="pascal_voc", label_fields=["category_id"]))  # 검증용 변환도 동일하게 적용
+
 
     def __getitem__(self, idx):
-        """
-        데이터셋에서 하나의 샘플을 가져옵니다.
-
-        Args:
-            idx (int): 샘플 인덱스
-
-        Returns:
-            tuple: 변환된 이미지와 대상(target) 딕셔너리
-        """
         row = self.df.iloc[idx]
         img_path = os.path.join(self.image_dir, row["file_name"])
 
-        # 이미지 로드 및 오류 처리
         image = cv2.imread(img_path)
         if image is None:
             raise FileNotFoundError(f"이미지 파일을 찾을 수 없습니다: {img_path}")
@@ -100,8 +91,14 @@ class PillDetectionDataset(Dataset):
         boxes = convert_bbox_format(boxes)
         labels = eval(row["category_id"])
 
-        # 이미지 변환 적용
+        # 데이터 증강 적용
         transformed = self.transforms(image=image, bboxes=boxes, category_id=labels)
+        
+        # 정규화 해제 (시각화를 위해)
+        image_vis = transformed["image"].permute(1, 2, 0).cpu().numpy()  # (H, W, C) 형태
+        image_vis = (image_vis * 0.5 + 0.5) * 255  # Albumentations Normalize 해제
+        image_vis = image_vis.astype(np.uint8)
+
         image = transformed["image"]
         boxes = torch.tensor(transformed["bboxes"], dtype=torch.float32)
         labels = torch.tensor(transformed["category_id"], dtype=torch.int64)
@@ -111,4 +108,4 @@ class PillDetectionDataset(Dataset):
             "labels": labels
         }
 
-        return image, target
+        return image, target, image_vis

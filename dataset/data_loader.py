@@ -1,8 +1,7 @@
 import pandas as pd
-from pathlib import Path
 from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
-from pill_dataset import PillDetectionDataset
+from .pill_dataset import PillDetectionDataset
 
 
 def get_dataloaders(csv_path, image_dir, batch_size=8, val_split=0.2, shuffle=True):
@@ -37,22 +36,3 @@ def get_dataloaders(csv_path, image_dir, batch_size=8, val_split=0.2, shuffle=Tr
     )
 
     return train_loader, val_loader
-
-
-if __name__ == "__main__":
-    """스크립트 실행 시 데이터로더를 생성하고 검증"""
-    
-    # 현재 파일이 위치한 디렉토리를 기준으로 경로 설정
-    BASE_DIR = Path(__file__).resolve().parent
-    CSV_PATH = BASE_DIR / "../data/image_annotations.csv"
-    IMAGE_DIR = BASE_DIR / "../data/train_images"
-
-    # 훈련 & 검증 데이터 로더 생성
-    train_loader, val_loader = get_dataloaders(CSV_PATH, IMAGE_DIR, batch_size=8, val_split=0.2)
-
-    # 데이터 확인
-    train_batch = next(iter(train_loader))
-    val_batch = next(iter(val_loader))
-
-    print(f"훈련 배치 크기: {len(train_batch[0])}")
-    print(f"검증 배치 크기: {len(val_batch[0])}")
