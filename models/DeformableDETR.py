@@ -1,7 +1,9 @@
+import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torchvision.models.resnet import resnet50
 from torch.nn import TransformerEncoderLayer
-from torchvision.ops import DeformConv2d
+from torchvision.ops import DeformConv2d, FeaturePyramidNetwork
 
 class DeformableAttention(nn.Module):
     def __init__(self, hidden_dim, num_heads):
@@ -21,12 +23,25 @@ class Backbone(nn.Module):
     def __init__(self, hidden_dim):
         super().__init__()
         self.backbone = resnet50(pretrained=True)
-        self.conv = nn.Conv2d(2048, hidden_dim, kernel_size=1)
+        self.fpn = FeaturePyramidNetwork([256, 512, 1024, 2048], hidden_dim)
     
     def forward(self, x):
-        x = self.backbone(x)
-        x = self.conv(x)
-        return x
+        x = self.backbone.conv1(x)
+        x = self.backbone.bn1(x)
+        x = self.backbone.relu(x)
+        x = self.backbone.maxpool(x)
+
+        c1 = self.backbone.layer1(x)  # 256 channels
+        c2 = self.backbone.layer2(c1)  # 512 channels
+        c3 = self.backbone.layer3(c2)  # 1024 channels
+        c4 = self.backbone.layer4(c3)  # 2048 channels
+        
+        features = {"0": c1, "1": c2, "2": c3, "3": c4}
+        fpn_features = self.fpn(features)  # FPN 적용
+        
+        # 여러 스케일의 feature를 결합하여 사용
+        selected_feature = torch.cat([fpn_features["0"], fpn_features["1"], fpn_features["2"], fpn_features["3"]], dim=1)
+        return selected_feature
 
 class DeformableDETR(nn.Module):
     def __init__(self, num_classes=82, hidden_dim=256, num_queries=100, num_heads=8, num_layers=6):
@@ -52,3 +67,12 @@ class DeformableDETR(nn.Module):
         bboxes = self.fc_bbox(hs).sigmoid()
         
         return logits, bboxes
+
+# 모델 인스턴스 생성
+model = DeformableDETR(num_classes=82)
+model.train()
+
+# 더미 입력 데이터 생성
+dummy_input = torch.randn(2, 3, 640, 640)  # Batch size 2
+logits, bboxes = model(dummy_input)
+print(logits.shape, bboxes.shape)
