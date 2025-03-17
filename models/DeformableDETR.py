@@ -62,15 +62,3 @@ class DeformableDETR(nn.Module):
         bboxes = self.fc_bbox(hs).sigmoid().permute(1, 0, 2)
 
         return logits, bboxes
-
-# 모델 인스턴스 생성
-model = DeformableDETR(num_classes=82).to(device)
-model.train()
-
-# 더미 입력 데이터 생성
-dummy_input = torch.randn(8, 3, 640, 640).to(device)
-
-with autocast(device.type):
-    logits, bboxes = model(dummy_input)
-
-print(logits.shape, bboxes.shape)
