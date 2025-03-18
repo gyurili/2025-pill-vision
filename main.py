@@ -10,7 +10,7 @@ if __name__ == "__main__":
     TEST_DIR = BASE_DIR / "./data/test_images"
     
     model = DeformableDETR()
-    model.to(device).half()
+    model.to(device).float()
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-4)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)

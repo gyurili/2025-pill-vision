@@ -17,8 +17,8 @@ def generalized_box_iou(boxes1, boxes2):
         Tensor: Generalized IoU 값 (N, M).
     """
     # 바운딩 박스 형식 변환 COCO -> Pascal VOC
-    boxes1 = convert_bbox_format(boxes1)
-    boxes2 = convert_bbox_format(boxes2)
+    boxes1 = torch.tensor(convert_bbox_format(boxes1), dtype=torch.float32)
+    boxes2 = torch.tensor(convert_bbox_format(boxes2), dtype=torch.float32)
     
     inter = (torch.min(boxes1[:, None, 2:], boxes2[:, 2:]) - 
              torch.max(boxes1[:, None, :2], boxes2[:, :2])).clamp(0)
@@ -166,12 +166,10 @@ class HungarianMatcher:
             pred_boxes = outputs["pred_boxes"][i]
             target_labels = targets[i]["labels"]
             target_boxes = targets[i]["boxes"]
-            
-            print(target_labels)
 
             cost_class = -pred_logits[:, target_labels]
             cost_bbox = torch.cdist(pred_boxes, target_boxes, p=1)
-            cost_giou = -generalized_box_iou(pred_boxes, target_boxes)
+            cost_giou = -generalized_box_iou(pred_boxes, target_boxes).to(device)
 
             cost_matrix = (
                 self.cost_class * cost_class

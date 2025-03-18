@@ -35,7 +35,7 @@ def train_model(model, criterion, train_loader, val_loader, optimizer, scheduler
             if isinstance(images, (list, tuple)):
                 images = torch.stack(images)  # 변환 추가
 
-            images = images.to(device).half()
+            images = images.to(device).float()
             targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
             outputs = model(images)
@@ -61,7 +61,7 @@ def train_model(model, criterion, train_loader, val_loader, optimizer, scheduler
                 if isinstance(images, (list, tuple)):
                     images = torch.stack(images)  # 변환 추가
 
-                images = images.to(device).half()
+                images = images.to(device).float()
                 targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
                 outputs = model(images)

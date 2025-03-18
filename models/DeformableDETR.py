@@ -51,7 +51,7 @@ class DeformableDETR(nn.Module):
     def forward(self, images):
         with autocast(device.type):
             x = self.backbone(images)
-            x = self.deform_attn(x)
+            x = self.deform_attn(x).float()
 
         memory = self.transformer_encoder(x)
 
