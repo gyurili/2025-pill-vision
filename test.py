@@ -7,9 +7,9 @@ if __name__ == "__main__":
     
     # 현재 파일이 위치한 디렉토리를 기준으로 경로 설정
     BASE_DIR = Path(__file__).resolve().parent
-    CSV_PATH = BASE_DIR / "./data/image_annotations.csv"
-    IMAGE_DIR = BASE_DIR / "./data/train_images"
-    TEST_DIR = BASE_DIR / "./data/test_images"
+    CSV_PATH = os.path.join(BASE_PATH, "image_annotations_fixed.csv")
+    IMAGE_DIR = "/content/drive/MyDrive/코드잇 초급 프로젝트/정리된 데이터셋/train_images"
+    TEST_DIR = "/content/drive/MyDrive/코드잇 초급 프로젝트/정리된 데이터셋/test_images"
 
     # 훈련 & 검증 데이터 로더 생성
     train_loader, val_loader = get_dataloaders(CSV_PATH, IMAGE_DIR, batch_size=8, val_split=0.2)
