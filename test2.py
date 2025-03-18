@@ -21,7 +21,7 @@ if __name__ == "__main__":
     model.to(device)
     model.eval()
 
-    print(f"✅ 모델이 로드되었습니다: {MODEL_PATH}")
+    print(f"모델이 로드되었습니다: {MODEL_PATH}")
 
     # 테스트 데이터 로드
     test_dataset = TestDataset(TEST_DIR)
@@ -34,7 +34,7 @@ if __name__ == "__main__":
         with torch.no_grad():
             predictions = model(images)
 
-        print(f"🔍 예측 결과 ({file_names[0]}): {predictions[0]}")
+        print(f"예측 결과 ({file_names[0]}): {predictions[0]}")
 
         # 시각화
         visualize_sample(images[0], predictions[0])
