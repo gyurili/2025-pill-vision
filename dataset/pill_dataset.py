@@ -6,6 +6,10 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 from torch.utils.data import Dataset
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 09008c4f302442aa81a0aa623f8edda4f0d9dc0a
 def convert_bbox_format(bboxes, to_format="pascal"):
     """
     바운딩 박스 변환 함수 (COCO ↔ Pascal VOC).
@@ -82,6 +86,15 @@ class PillDetectionDataset(Dataset):
         ], bbox_params=A.BboxParams(format="pascal_voc", label_fields=["category_id"]))
 
     def __getitem__(self, idx):
+        """
+        데이터셋의 개별 샘플 반환.
+
+        Args:
+            idx (int): 데이터 인덱스
+
+        Returns:
+            tuple: (image, target, image_vis)
+        """
         row = self.df.iloc[idx]
         img_path = os.path.join(self.image_dir, row["file_name"])
         image = cv2.imread(img_path)
@@ -115,9 +128,14 @@ class PillDetectionDataset(Dataset):
         # 변환 적용
         transformed = self.transforms(image=image, bboxes=valid_boxes, category_id=valid_labels)
 
+        # 최종 데이터 변환
         image = transformed["image"]
-        boxes = torch.tensor(transformed["bboxes"], dtype=torch.float32)
+        boxes = torch.tensor(bboxes, dtype=torch.float32)
         labels = torch.tensor(transformed["category_id"], dtype=torch.int64)
+
+        # bbox_convert=False이면 다시 COCO로 변환 후 반환
+        if not self.bbox_convert:
+            boxes = torch.tensor(convert_bbox_format(boxes.tolist(), "coco"), dtype=torch.float32)
 
         target = {
             "boxes": boxes,
