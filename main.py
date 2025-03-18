@@ -34,10 +34,3 @@ if __name__ == "__main__":
     # 모델 저장
     torch.save(model.state_dict(), model_save_path)
     print(f"모델이 저장되었습니다: {model_save_path}")
-
-    # 모델 로드 후 예측
-    #test_dataset = TestDataset(TEST_IMAGES)
-    #test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)
-
-    #model = load_model(model_save_path, num_classes, device)
-    #predict(model, test_loader)

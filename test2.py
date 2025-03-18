@@ -34,9 +34,9 @@ if __name__ == "__main__":
         with torch.no_grad():
             predictions = model(images)
 
-        # 예측 결과 필터링 (신뢰도 0.05 이상인 것만)
+        # 예측 결과 필터링
         pred = predictions[0]
-        keep = pred["scores"] > 0.05
+        keep = pred["scores"] > 0.3
         pred["boxes"] = pred["boxes"][keep]
         pred["labels"] = pred["labels"][keep]
         pred["scores"] = pred["scores"][keep]

@@ -4,7 +4,7 @@ from models.faster_rcnn import get_faster_rcnn_model
 from dataset.data_loader import get_dataloaders
 import os
 
-def train(model, train_loader, val_loader, num_epochs, lr=0.0001, device="cuda"):
+def train(model, train_loader, val_loader, num_epochs, lr=0.0005, device="cuda"):
     
     model.to(device)
     optimizer = optim.Adam(model.parameters(), lr=lr)
