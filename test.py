@@ -1,6 +1,6 @@
 from pathlib import Path
 from dataset import get_dataloaders, TestDataset
-from src import visualize_sample
+from src import visualize_sample, CLASS_NAMES
 
 if __name__ == "__main__":
     """스크립트 실행 시 데이터로더를 생성하고 검증"""
@@ -23,4 +23,4 @@ if __name__ == "__main__":
     image, target, image_vir = train_batch[0][0], train_batch[1][0], train_batch[2][0]
 
     # 시각화 실행
-    visualize_sample(image, image_vir, target, True)
+    visualize_sample(image_vir, target, True, CLASS_NAMES)
