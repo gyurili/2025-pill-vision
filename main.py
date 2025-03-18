@@ -2,7 +2,6 @@ import torch
 from models.faster_rcnn import get_faster_rcnn_model
 from dataset.data_loader import get_dataloaders
 from src.train import train
-from test2 import load_model, predict
 import os
 import json  # JSON 파일 로드를 위해 추가
 
@@ -29,7 +28,7 @@ if __name__ == "__main__":
 
     # 모델 학습
     model = get_faster_rcnn_model(num_classes)
-    train(model, train_loader, val_loader, num_epochs=5, device=device)
+    train(model, train_loader, val_loader, num_epochs=8, device=device)
 
     # 모델 저장
     torch.save(model.state_dict(), model_save_path)

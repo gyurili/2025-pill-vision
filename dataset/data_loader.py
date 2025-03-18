@@ -17,14 +17,14 @@ def default_collate_fn(batch):
     return tuple(zip(*batch))
 
 
-def get_dataloaders(csv_path, image_dir, bbox_convert=False, batch_size=8, val_split=0.2):
+def get_dataloaders(csv_path, image_dir, use_conversion=False, batch_size=8, val_split=0.2):
     """
     훈련 및 검증 데이터로 분할 후 DataLoader를 생성.
 
     Args:
         csv_path (str or Path): 주석 파일 (CSV) 경로
         image_dir (str or Path): 이미지가 저장된 폴더 경로
-        bbox_convert (bool, optional): False일 경우 COCO 형식 bbox 유지, True면 Pascal VOC 변환. Defaults to False.
+        use_conversion (bool, optional): 바운딩 박스 변환 여부. Defaults to False.
         batch_size (int, optional): 배치 크기. Defaults to 8.
         val_split (float, optional): 검증 데이터 비율. Defaults to 0.2.
 
@@ -37,9 +37,8 @@ def get_dataloaders(csv_path, image_dir, bbox_convert=False, batch_size=8, val_s
     # 데이터 분할 (train : val = (1 - val_split) : val_split)
     train_df, val_df = train_test_split(df, test_size=val_split, random_state=42, shuffle=True)
 
-    # 데이터셋 생성
-    train_dataset = PillDetectionDataset(train_df, image_dir, train=True, bbox_convert=bbox_convert)
-    val_dataset = PillDetectionDataset(val_df, image_dir, train=False, bbox_convert=bbox_convert)
+    train_dataset = PillDetectionDataset(train_df, image_dir, train=True, use_conversion=use_conversion)
+    val_dataset = PillDetectionDataset(val_df, image_dir, train=False, use_conversion=use_conversion)
 
     # 데이터로더 생성
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=default_collate_fn)
