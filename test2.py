@@ -1,62 +1,41 @@
 import torch
 import os
-import cv2
-import numpy as np
+from pathlib import Path
 from models.faster_rcnn import get_faster_rcnn_model
-from dataset.pill_dataset import TestDataset
-from src.visualization import visualize_sample
+from dataset import TestDataset
+from src import visualize_sample
 
-def load_model(model_path, num_classes, device="cuda"):
-    """
-    저장된 Faster R-CNN 모델을 불러오는 함수
-    
-    Args:
-        model_path (str): 저장된 모델의 경로
-        num_classes (int): 모델의 클래스 수
-        device (str): 사용할 디바이스 ("cuda" or "cpu")
+if __name__ == "__main__":
+    """테스트 스크립트: 모델 로드 및 예측"""
 
-    Returns:
-        model (torch.nn.Module): 로드된 모델
-    """
+    # 현재 파일이 위치한 디렉토리를 기준으로 경로 설정
+    BASE_DIR = Path(__file__).resolve().parent
+    TEST_DIR = "/content/drive/MyDrive/코드잇 초급 프로젝트/정리된 데이터셋/test_images"
+    MODEL_PATH = os.path.join(BASE_DIR, "models/faster_rcnn_epoch5.pth")
+
+    # 모델 불러오기
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    num_classes = 10  # 학습할 때 사용한 클래스 개수와 맞춰야 함!
     model = get_faster_rcnn_model(num_classes)
-    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
     model.to(device)
     model.eval()
-    return model
 
-def predict(model, test_loader, device="cuda"):
-    """
-    Faster R-CNN 모델을 사용하여 테스트 이미지에서 객체 탐지 수행
-    
-    Args:
-        model (torch.nn.Module): 학습된 Faster R-CNN 모델
-        test_loader (DataLoader): 테스트 데이터로더
-        device (str): 사용할 디바이스 ("cuda" or "cpu")
-    """
-    model.to(device)
-    model.eval()
-    
-    with torch.no_grad():
-        for images, file_names in test_loader:
-            images = [img.to(device) for img in images]
+    print(f"✅ 모델이 로드되었습니다: {MODEL_PATH}")
+
+    # 테스트 데이터 로드
+    test_dataset = TestDataset(TEST_DIR)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)
+
+    # 테스트 수행
+    for images, file_names in test_loader:
+        images = list(img.to(device) for img in images)
+
+        with torch.no_grad():
             predictions = model(images)
-            
-            for i, pred in enumerate(predictions):
-                boxes = pred["boxes"].cpu().numpy().astype(int)
-                labels = pred["labels"].cpu().numpy()
-                scores = pred["scores"].cpu().numpy()
-                
-                img_path = os.path.join(TEST_IMAGES, file_names[i])
-                image = cv2.imread(img_path)
-                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                
-                # 신뢰도가 0.5 이상인 경우만 표시
-                filtered_boxes = []
-                filtered_labels = []
-                for j, score in enumerate(scores):
-                    if score > 0.5:
-                        filtered_boxes.append(boxes[j])
-                        filtered_labels.append(labels[j])
-                
-                target = {"boxes": torch.tensor(filtered_boxes), "labels": torch.tensor(filtered_labels)}
-                visualize_sample(images[i], image, target, class_id=True)
+
+        print(f"🔍 예측 결과 ({file_names[0]}): {predictions[0]}")
+
+        # 시각화
+        visualize_sample(images[0], predictions[0])
+        break  # 첫 번째 이미지만 테스트 후 종료
