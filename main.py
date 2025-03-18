@@ -1,6 +1,7 @@
 import torch
 import matplotlib.pyplot as plt
-from src import device, train_model, BASE_DIR, get_loss
+from torch.optim.lr_scheduler import ReduceLROnPlateau
+from src import device, train_model, BASE_DIR, get_loss, predict_and_visualize_dataset
 from models import DeformableDETR
 from dataset import get_dataloaders, TestDataset
 
@@ -9,11 +10,11 @@ if __name__ == "__main__":
     IMAGE_DIR = BASE_DIR / "./data/train_images"
     TEST_DIR = BASE_DIR / "./data/test_images"
     
-    model = DeformableDETR()
+    model = DeformableDETR(num_layers=3)
     model.to(device).float()
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-4)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3, verbose=True)
     
     # 훈련 & 검증 데이터 로더 생성
     train_loader, val_loader = get_dataloaders(CSV_PATH, IMAGE_DIR, batch_size=8, val_split=0.2)
@@ -34,3 +35,6 @@ if __name__ == "__main__":
     plt.legend()
     plt.grid()
     plt.show()
+    
+    # 예측 및 시각화 실행
+    predict_and_visualize_dataset(model, test_dataset, device, class_names, threshold=0.5, num_samples=5)

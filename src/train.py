@@ -1,7 +1,7 @@
 import torch
 from src import device
 
-def train_model(model, criterion, train_loader, val_loader, optimizer, scheduler, num_epochs, max_norm=0.1):
+def train_model(model, criterion, train_loader, val_loader, optimizer, scheduler, num_epochs, max_norm=1.0):
     """ 
     Deformable DETR 학습 및 검증 함수 
     
@@ -76,7 +76,7 @@ def train_model(model, criterion, train_loader, val_loader, optimizer, scheduler
         print(f"Epoch {epoch + 1}/{num_epochs}, Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}")
 
         if scheduler is not None:
-            scheduler.step()
+            scheduler.step(avg_val_loss)
 
     print("\nTraining completed.")
     return model, train_loss_history, val_loss_history

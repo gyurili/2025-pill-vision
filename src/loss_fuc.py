@@ -176,6 +176,14 @@ class HungarianMatcher:
                 + self.cost_bbox * cost_bbox
                 + self.cost_giou * cost_giou
             )
+            
+            if torch.isnan(cost_matrix).any() or torch.isinf(cost_matrix).any():
+                print("cost_matrix contains NaN or Inf values!")
+                print(f"cost_class: {cost_class}")
+                print(f"cost_bbox: {cost_bbox}")
+                print(f"cost_giou: {cost_giou}")
+                raise ValueError("Invalid numeric entries in cost_matrix")
+
 
             row_idx, col_idx = linear_sum_assignment(cost_matrix.cpu().numpy())
             indices.append((torch.as_tensor(row_idx, dtype=torch.int64),
