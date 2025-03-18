@@ -102,6 +102,8 @@ class PillDetectionDataset(Dataset):
         boxes = ast.literal_eval(row["bbox"])
         labels = ast.literal_eval(row["category_id"])
         boxes = convert_bbox_format(boxes, "pascal")  # COCO → Pascal 변환
+        
+        
 
         # 데이터 변환 적용
         transformed = self.transforms(image=image, bboxes=boxes, category_id=labels)
