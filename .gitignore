@@ -144,3 +144,4 @@ pyrightconfig.json
 data/train_images/
 data/train_annotations/
 data/test_images/
+models/*.pth
