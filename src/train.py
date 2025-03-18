@@ -4,7 +4,7 @@ from models.faster_rcnn import get_faster_rcnn_model
 from dataset.data_loader import get_dataloaders
 import os
 
-def train(model, train_loader, val_loader, num_epochs=5, lr=0.005, device="cuda"):
+def train(model, train_loader, val_loader, num_epochs, lr=0.0001, device="cuda"):
     
     model.to(device)
     optimizer = optim.Adam(model.parameters(), lr=lr)
@@ -23,7 +23,7 @@ def train(model, train_loader, val_loader, num_epochs=5, lr=0.005, device="cuda"
             
             optimizer.zero_grad()
             loss_dict = model(images, targets)
-            loss = sum(loss for loss in loss_dict.values())
+            loss = torch.mean(torch.stack([v for v in loss_dict.values()]))
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
