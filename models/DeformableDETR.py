@@ -4,8 +4,8 @@ from torch.amp import autocast
 import torch.nn.functional as F
 from torchvision.models.resnet import resnet50
 from torch.nn import TransformerEncoder, TransformerEncoderLayer, TransformerDecoder, TransformerDecoderLayer
+from src import device
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class DeformableAttention(nn.Module):
     def __init__(self, hidden_dim, num_heads):
@@ -44,7 +44,7 @@ class DeformableDETR(nn.Module):
         decoder_layer = TransformerDecoderLayer(d_model=hidden_dim, nhead=num_heads)
         self.transformer_decoder = TransformerDecoder(decoder_layer, num_layers)
 
-        self.query_embed = nn.Embedding(5, hidden_dim)
+        self.query_embed = nn.Embedding(num_queries, hidden_dim)
         self.fc_class = nn.Linear(hidden_dim, num_classes + 1)
         self.fc_bbox = nn.Linear(hidden_dim, 4)
 
