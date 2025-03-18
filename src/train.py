@@ -4,7 +4,7 @@ from models.faster_rcnn import get_faster_rcnn_model
 from dataset.data_loader import get_dataloaders
 import os
 
-def train(model, train_loader, val_loader, num_epochs=10, lr=0.005, device="cuda"):
+def train(model, train_loader, val_loader, num_epochs=5, lr=0.005, device="cuda"):
     
     model.to(device)
     optimizer = optim.Adam(model.parameters(), lr=lr)
@@ -14,7 +14,7 @@ def train(model, train_loader, val_loader, num_epochs=10, lr=0.005, device="cuda
         total_loss = 0
         print(f"[INFO] Epoch {epoch+1}/{num_epochs} 시작")
         
-        for step, (images, targets) in enumerate(train_loader):  
+        for step, (images, targets, _) in enumerate(train_loader):  
             if step % 20 == 0:
                 print(f"[INFO] Step {step+1}/{len(train_loader)} 진행 중...")  
             

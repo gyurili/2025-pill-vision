@@ -5,128 +5,140 @@ import numpy as np
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 from torch.utils.data import Dataset
-import ast
 
-def convert_bbox_format(bboxes):
+
+def convert_bbox_format(bboxes, to_format="pascal"):
     """
-    COCO 형식 [x, y, width, height] → Pascal VOC 형식 [x_min, y_min, x_max, y_max] 변환
+    바운딩 박스 변환 함수 (COCO ↔ Pascal VOC).
 
     Args:
-        bboxes (list): COCO 형식의 바운딩 박스 리스트
+        bboxes (list): 원본 바운딩 박스 리스트
+        to_format (str): 변환할 형식 ("pascal" 또는 "coco")
 
     Returns:
-        list: Pascal VOC 형식으로 변환된 바운딩 박스 리스트
+        list: 변환된 바운딩 박스 리스트
     """
-    new_bboxes = []
+    converted_bboxes = []
+    
     for bbox in bboxes:
-        if len(bbox) < 4:
-            print(f"🚨 잘못된 bbox 데이터: {bbox}")
-            continue  # 잘못된 bbox는 건너뛰기
+        if to_format == "pascal":
+            x_min, y_min, width, height = bbox
+            x_max = x_min + width
+            y_max = y_min + height
+            if width <= 0 or height <= 0:
+                print(f"[경고] 잘못된 박스: {bbox}")
+                continue
+            converted_bboxes.append([x_min, y_min, x_max, y_max])
         
-        x_min, y_min, width, height = bbox[:4]
-        x_max = x_min + max(1, width)  # width가 0 이하일 경우 최소 1로 설정
-        y_max = y_min + max(1, height)  # height가 0 이하일 경우 최소 1로 설정
+        elif to_format == "coco":
+            # Pascal VOC (x_min, y_min, x_max, y_max) → COCO (x, y, w, h)
+            x_min, y_min, x_max, y_max = bbox
+            width = x_max - x_min
+            height = y_max - y_min
+            converted_bboxes.append([x_min, y_min, width, height])
         
-        if y_max <= y_min or x_max <= x_min:
-            print(f"🚨 경고: 잘못된 bbox 수정됨: {bbox}")
-            continue  # 잘못된 bbox 건너뛰기
-        
-        new_bboxes.append([x_min, y_min, x_max, y_max])
-    return new_bboxes
+        else:
+            raise ValueError("Invalid format. Use 'pascal' or 'coco'.")
+
+    return converted_bboxes
 
 
 class PillDetectionDataset(Dataset):
     """
-    객체 탐지 데이터셋 (Faster R-CNN, YOLO 등에서 사용 가능)
+    객체 탐지 데이터셋 (Faster R-CNN, YOLO 등에서 사용 가능).
     """
 
-    def __init__(self, df, image_dir, train=True):
+    def __init__(self, df, image_dir, train=True, bbox_convert=False):
         """
-        객체 탐지 데이터셋을 초기화합니다.
+        객체 탐지 데이터셋을 초기화.
 
         Args:
-            df (pd.DataFrame): 훈련 또는 검증 데이터셋
+            df (pd.DataFrame): 학습 또는 검증 데이터셋
             image_dir (str): 이미지가 저장된 폴더 경로
-            train (bool, optional): 학습 모드 여부 (True: 데이터 증강 포함). Defaults to True.
+            train (bool): 학습 모드 여부 (True: 데이터 증강 포함)
+            bbox_convert (bool): False일 경우 최종 bbox를 COCO로 변환
         """
         self.df = df
         self.image_dir = image_dir
         self.train = train
-        self.transforms = self.get_transforms(train)
+        self.bbox_convert = bbox_convert
+        self.transforms = self.get_transforms()
 
     def __len__(self):
-        """데이터셋의 길이를 반환합니다."""
+        """ 데이터셋 크기 반환 """
         return len(self.df)
 
-    def get_transforms(self, train):
+    def get_transforms(self):
         """
-        Albumentations 변환 함수
-        :param train: True일 경우 데이터 증강 적용, False면 검증용 변환만 적용
-        :return: Albumentations 변환 객체
+        데이터 변환 설정 (Albumentations).
+
+        Returns:
+            A.Compose: 데이터 변환 객체
         """
-        if train:
-            return A.Compose([
-                A.Resize(640, 640),
-                A.HorizontalFlip(p=0.5),
-                A.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
-                ToTensorV2()
-            ], bbox_params=A.BboxParams(format="pascal_voc", label_fields=["category_id"])) # bbox와 label을 함께 변환하도록 설정
-        else:
-            return A.Compose([
-                A.Resize(640, 640),
-                A.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
-                ToTensorV2()
-            ], bbox_params=A.BboxParams(format="pascal_voc", label_fields=["category_id"])) # 검증용 변환도 동일하게 적용
+        return A.Compose([
+            A.Resize(640, 640),
+            A.HorizontalFlip(p=0.5) if self.train else A.NoOp(),
+            A.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
+            ToTensorV2()
+        ], bbox_params=A.BboxParams(format="pascal_voc", label_fields=["category_id"]))
 
     def __getitem__(self, idx):
         row = self.df.iloc[idx]
         img_path = os.path.join(self.image_dir, row["file_name"])
-        
         image = cv2.imread(img_path)
-        if image is None:
-            raise FileNotFoundError(f"🚨 이미지 파일을 찾을 수 없습니다: {img_path}")
-        
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-        # 바운딩 박스 변환 적용
-        boxes = ast.literal_eval(row["bbox"])
-        boxes = convert_bbox_format(boxes)
+        # 바운딩 박스 처리
+        boxes = eval(row["bbox"])  # 문자열을 리스트로 변환
+        boxes = convert_bbox_format(boxes, "pascal")  # COCO → Pascal 변환
+        labels = eval(row["category_id"])  # 문자열을 리스트로 변환
 
-        labels = ast.literal_eval(row["category_id"])
+        h, w = image.shape[:2]
 
-        # 정규화
-        h, w, _ = image.shape
-        norm_boxes = [[max(0, min(1, x_min / w)), max(0, min(1, y_min / h)),
-                    max(0, min(1, x_max / w)), max(0, min(1, y_max / h))]
-                    for x_min, y_min, x_max, y_max in boxes]
+        # 0~1 정규화
+        boxes = np.array(boxes, dtype=np.float32)
+        boxes[:, [0, 2]] /= w  # x_min, x_max 정규화
+        boxes[:, [1, 3]] /= h  # y_min, y_max 정규화
 
-        # 디버깅용 print
-        print(f"[DEBUG] Original bbox: {boxes}")
-        print(f"[DEBUG] Normalized bbox: {norm_boxes}")
+        # 잘못된 바운딩 박스 필터링
+        valid_boxes = []
+        valid_labels = []
+        for i, box in enumerate(boxes):
+            if box[2] > box[0] and box[3] > box[1]:  # 너비와 높이가 양수인지 확인
+                valid_boxes.append(box)
+                valid_labels.append(labels[i])
+            else:
+                print(f"[경고] 잘못된 바운딩 박스 제거: {box}")
 
-        transformed = self.transforms(image=image, bboxes=norm_boxes, category_id=labels)
+        if len(valid_boxes) == 0:
+            raise ValueError(f"[오류] 모든 바운딩 박스가 잘못되었습니다! index={idx}")
+
+        # 변환 적용
+        transformed = self.transforms(image=image, bboxes=valid_boxes, category_id=valid_labels)
+
         image = transformed["image"]
-
-        # 정규화 해제 (다시 원래 크기로 변환)
-        boxes = torch.tensor([[x_min * w, y_min * h, x_max * w, y_max * h] 
-                            for x_min, y_min, x_max, y_max in transformed["bboxes"]], dtype=torch.float32)
+        boxes = torch.tensor(transformed["bboxes"], dtype=torch.float32)
         labels = torch.tensor(transformed["category_id"], dtype=torch.int64)
 
-        target = {"boxes": boxes, "labels": labels}
-        return image, target
+        target = {
+            "boxes": boxes,
+            "labels": labels
+        }
 
-
+        return image, target, image
 
 class TestDataset(Dataset):
     """
-    주석이 없는 테스트 데이터셋을 로드하는 클래스
+    주석이 없는 테스트 데이터셋.
     """
-    
+
     def __init__(self, image_dir, transform=None):
         """
+        테스트 데이터셋 초기화.
+
         Args:
             image_dir (str): 테스트 이미지가 저장된 폴더 경로
-            transform (albumentations.Compose, optional): 이미지 변환을 위한 Albumentations 변환 객체
+            transform (albumentations.Compose, optional): 이미지 변환 설정
         """
         self.image_dir = image_dir
         self.image_files = [f for f in os.listdir(image_dir) if f.lower().endswith((".jpg", ".jpeg", ".png"))]
@@ -137,13 +149,21 @@ class TestDataset(Dataset):
         return len(self.image_files)
 
     def __getitem__(self, idx):
-        """ 이미지 로드 및 변환 """
+        """
+        개별 테스트 샘플 반환.
+
+        Args:
+            idx (int): 데이터 인덱스
+
+        Returns:
+            tuple: (image, file_name)
+        """
         file_name = self.image_files[idx]
         img_path = os.path.join(self.image_dir, file_name)
 
         image = cv2.imread(img_path)
         if image is None:
-            raise FileNotFoundError(f"🚨 이미지 파일을 찾을 수 없습니다: {img_path}")
+            raise FileNotFoundError(f"이미지 파일을 찾을 수 없습니다: {img_path}")
 
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
@@ -151,10 +171,15 @@ class TestDataset(Dataset):
         transformed = self.transform(image=image)
         image = transformed["image"]
 
-        return image, file_name # 라벨이 없으므로 파일명만 반환
+        return image, file_name  # 라벨이 없으므로 파일명만 반환
 
     def default_transforms(self):
-        """ 기본 이미지 변환 설정 """
+        """
+        기본 이미지 변환 설정.
+
+        Returns:
+            A.Compose: Albumentations 변환 객체
+        """
         return A.Compose([
             A.Resize(640, 640),
             A.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
