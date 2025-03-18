@@ -61,4 +61,7 @@ class DeformableDETR(nn.Module):
         logits = self.fc_class(hs).permute(1, 0, 2)
         bboxes = self.fc_bbox(hs).sigmoid().permute(1, 0, 2)
 
-        return logits, bboxes
+        return {
+            "pred_logits": logits,
+            "pred_boxes": bboxes
+        }

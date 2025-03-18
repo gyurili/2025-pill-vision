@@ -1,12 +1,10 @@
-from pathlib import Path
 from dataset import get_dataloaders, TestDataset
-from src import visualize_sample
+from src import visualize_sample, BASE_DIR
 
 if __name__ == "__main__":
     """스크립트 실행 시 데이터로더를 생성하고 검증"""
     
     # 현재 파일이 위치한 디렉토리를 기준으로 경로 설정
-    BASE_DIR = Path(__file__).resolve().parent
     CSV_PATH = BASE_DIR / "./data/image_annotations.csv"
     IMAGE_DIR = BASE_DIR / "./data/train_images"
     TEST_DIR = BASE_DIR / "./data/test_images"
