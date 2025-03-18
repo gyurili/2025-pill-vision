@@ -103,21 +103,9 @@ class PillDetectionDataset(Dataset):
         boxes = eval(row["bbox"])  # 문자열을 리스트로 변환
         boxes = convert_bbox_format(boxes, "pascal")  # COCO → Pascal 변환
         labels = eval(row["category_id"])  # 문자열을 리스트로 변환
-        
-        h, w = image.shape[:2]  # 원본 이미지 크기 가져오기
-
-        # Albumentations를 위해 0~1 사이로 정규화
-        boxes = np.array(boxes, dtype=np.float32)
-        boxes[:, [0, 2]] /= w  # x_min, x_max 정규화
-        boxes[:, [1, 3]] /= h  # y_min, y_max 정규화
 
         # 데이터 증강 적용
         transformed = self.transforms(image=image, bboxes=boxes, category_id=labels)
-        
-        # 바운딩 박스 복원 (0~1 → 원래 좌표)
-        bboxes = np.array(transformed["bboxes"])
-        bboxes[:, [0, 2]] *= w  # x_min, x_max 원본 크기 복원
-        bboxes[:, [1, 3]] *= h  # y_min, y_max 원본 크기 복원
 
         # 정규화 해제 (시각화용)
         image_vis = transformed["image"].permute(1, 2, 0).cpu().numpy()  # (H, W, C) 형태
@@ -126,7 +114,7 @@ class PillDetectionDataset(Dataset):
 
         # 최종 데이터 변환
         image = transformed["image"]
-        boxes = torch.tensor(bboxes, dtype=torch.float32)
+        boxes = torch.tensor(transformed["bboxes"], dtype=torch.float32)
         labels = torch.tensor(transformed["category_id"], dtype=torch.int64)
 
         # bbox_convert=False이면 다시 COCO로 변환 후 반환
