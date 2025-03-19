@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
     # 모델 학습
     model = get_faster_rcnn_model(num_classes)
-    train(model, train_loader, val_loader, num_epochs=1, device=device)
+    train(model, train_loader, val_loader, num_epochs=10, device=device)
 
     # 모델 저장
     torch.save(model.state_dict(), model_save_path)
