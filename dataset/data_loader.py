@@ -37,8 +37,8 @@ def get_dataloaders(csv_path, image_dir, use_conversion=False, batch_size=8, val
     # 데이터 분할 (train : val = (1 - val_split) : val_split)
     train_df, val_df = train_test_split(df, test_size=val_split, random_state=42, shuffle=True)
 
-    train_dataset = PillDetectionDataset(train_df, image_dir, train=True, use_conversion=use_conversion)
-    val_dataset = PillDetectionDataset(val_df, image_dir, train=False, use_conversion=use_conversion)
+    train_dataset = PillDetectionDataset(train_df, image_dir, train=True)
+    val_dataset = PillDetectionDataset(val_df, image_dir, train=False)
 
     # 데이터로더 생성
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=default_collate_fn)

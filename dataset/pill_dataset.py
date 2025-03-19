@@ -6,11 +6,11 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 from torch.utils.data import Dataset
 
+# 이미지 크기를 통일할 최대 크기 설정 (예: 800x800)
+MAX_SIZE = 800
+
 def convert_bbox_format(bboxes, to_format="pascal", skip_conversion=False):
-    """
-    바운딩 박스 변환 함수 (COCO ↔ Pascal VOC).
-    - `skip_conversion=True`이면 변환을 건너뜀 (즉, 원본 데이터 그대로 유지).
-    """
+    """ 바운딩 박스 변환 함수 (COCO ↔ Pascal VOC) """
     if skip_conversion:
         return bboxes  # 변환하지 않고 그대로 반환
 
@@ -33,14 +33,10 @@ def convert_bbox_format(bboxes, to_format="pascal", skip_conversion=False):
     return converted_bboxes
 
 class PillDetectionDataset(Dataset):
-    """
-    객체 탐지 데이터셋 (Faster R-CNN, YOLO 등에서 사용 가능).
-    """
-    def __init__(self, df, image_dir, train=True, use_conversion=False):
+    def __init__(self, df, image_dir, train=True):
         self.df = df
         self.image_dir = image_dir
         self.train = train
-        self.use_conversion = use_conversion  # 변환 여부 옵션
         self.transforms = self.get_transforms()
     
     def __len__(self):
@@ -48,11 +44,49 @@ class PillDetectionDataset(Dataset):
     
     def get_transforms(self):
         return A.Compose([
-            A.Resize(640, 640),
-            A.HorizontalFlip(p=0.5) if self.train else A.NoOp(),
             A.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
             ToTensorV2()
         ], bbox_params=A.BboxParams(format="pascal_voc", label_fields=["category_id"]))
+
+    def pad_and_resize(self, image, bboxes):
+        """ 
+        원본 비율을 유지하면서 검정색 패딩을 추가하여 `MAX_SIZE x MAX_SIZE`로 맞춤 
+        """
+        h, w, _ = image.shape
+        scale = min(MAX_SIZE / w, MAX_SIZE / h)  # 축소/확대 비율
+        new_w, new_h = int(w * scale), int(h * scale)  # 비율 유지한 새로운 크기
+        
+        # 이미지 크기 조정
+        resized_image = cv2.resize(image, (new_w, new_h))
+
+        # 검정색 배경의 빈 캔버스 생성
+        padded_image = np.zeros((MAX_SIZE, MAX_SIZE, 3), dtype=np.uint8)
+        
+        # 중앙 정렬 (좌표 계산)
+        pad_x = (MAX_SIZE - new_w) // 2
+        pad_y = (MAX_SIZE - new_h) // 2
+        padded_image[pad_y:pad_y+new_h, pad_x:pad_x+new_w] = resized_image  # 중앙 배치
+
+        # 바운딩 박스 크기 변환 및 패딩 좌표 적용
+        new_bboxes = []
+        for bbox in bboxes:
+            x_min, y_min, x_max, y_max = bbox
+            x_min = x_min * scale + pad_x
+            y_min = y_min * scale + pad_y
+            x_max = x_max * scale + pad_x
+            y_max = y_max * scale + pad_y
+
+            # 변환 후 `x_min > x_max`, `y_min > y_max` 방지
+            x_min, x_max = min(x_min, x_max), max(x_min, x_max)
+            y_min, y_max = min(y_min, y_max), max(y_min, y_max)
+
+            # 바운딩 박스가 유효한 경우만 추가
+            if x_max > x_min and y_max > y_min:
+                new_bboxes.append([x_min, y_min, x_max, y_max])
+            else:
+                print(f"[WARNING] 잘못된 bbox 제거: ({x_min}, {y_min}, {x_max}, {y_max})")
+
+        return padded_image, new_bboxes, pad_x, pad_y, scale
     
     def __getitem__(self, idx):
         row = self.df.iloc[idx]
@@ -65,51 +99,25 @@ class PillDetectionDataset(Dataset):
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         # 바운딩 박스 가져오기
-        boxes = eval(row["bbox"])  # 문자열로 저장된 리스트 변환
+        boxes = np.array(eval(row["bbox"]), dtype=np.float32)
         labels = eval(row["category_id"])  
 
-        # 변환 옵션에 따라 적용
-        boxes = convert_bbox_format(boxes, "pascal", skip_conversion=not self.use_conversion)
+        # 원본 비율 유지 + 패딩 추가
+        padded_image, new_bboxes, pad_x, pad_y, scale = self.pad_and_resize(image, boxes)
 
-        # 바운딩 박스 정렬 보장 (x_min <= x_max, y_min <= y_max)
-        boxes = np.array(boxes, dtype=np.float32)
-        boxes[:, 0], boxes[:, 2] = np.minimum(boxes[:, 0], boxes[:, 2]), np.maximum(boxes[:, 0], boxes[:, 2])
-        boxes[:, 1], boxes[:, 3] = np.minimum(boxes[:, 1], boxes[:, 3]), np.maximum(boxes[:, 1], boxes[:, 3])
+        # Albumentations 적용
+        transformed = self.transforms(image=padded_image, bboxes=new_bboxes, category_id=labels)
 
-        h, w = image.shape[:2]
-
-        # 정규화 수행
-        boxes[:, [0, 2]] /= w  # x_min, x_max 정규화
-        boxes[:, [1, 3]] /= h  # y_min, y_max 정규화
-
-        # 바운딩 박스가 너무 작은 경우 필터링
-        valid_boxes = []
-        valid_labels = []
-        for i, (x_min, y_min, x_max, y_max) in enumerate(boxes):
-            if x_max > x_min and y_max > y_min:  # 유효한 박스만 저장
-                valid_boxes.append([x_min, y_min, x_max, y_max])
-                valid_labels.append(labels[i])
-
-        if len(valid_boxes) == 0:
-            print(f"[WARN] Index {idx}: 모든 바운딩 박스가 무효합니다. 기본값으로 설정.")
-
-        transformed = self.transforms(image=image, bboxes=valid_boxes, category_id=valid_labels)
-        
-        # 바운딩 박스 복원
+        # 최종 변환된 bbox 좌표 확인
         bboxes = np.array(transformed["bboxes"])
-        bboxes[:, [0, 2]] *= w  # x_min, x_max 원본 크기 복원
-        bboxes[:, [1, 3]] *= h  # y_min, y_max 원본 크기 복원
-
-        image_vis = transformed["image"].permute(1, 2, 0).cpu().numpy()
-        image_vis = ((image_vis * 0.5) + 0.5) * 255
-        image_vis = image_vis.astype(np.uint8)
+        #print(f"[DEBUG] Index {idx} - 최종 변환된 bbox: {bboxes}")
 
         image = transformed["image"]
         boxes = torch.tensor(bboxes, dtype=torch.float32)
-        labels = torch.tensor(valid_labels, dtype=torch.int64)
+        labels = torch.tensor(labels, dtype=torch.int64)
 
         target = {"boxes": boxes, "labels": labels}
-        return image, target, image_vis
+        return image, target, image
 
 
 class TestDataset(Dataset):
@@ -152,11 +160,10 @@ class TestDataset(Dataset):
 
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-        # 이미지 변환 적용
         transformed = self.transform(image=image)
         image = transformed["image"]
 
-        return image, file_name  # 라벨이 없으므로 파일명만 반환
+        return image, file_name
 
     def default_transforms(self):
         """
