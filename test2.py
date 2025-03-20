@@ -86,8 +86,8 @@ if __name__ == "__main__":
 
             for box, label in zip(prediction["boxes"], prediction["labels"]):
                 x_min, y_min, x_max, y_max = map(int, box.tolist())
-                label_id = str(int(label.item()))  # 모델의 라벨을 문자열 ID로 변환
-                label_name = category_name_mapping.get(label_id, "알 수 없음")  # 한글 이름 가져오기
+                label_id = str(int(label.item()))  # 모델 라벨을 문자열 ID로 변환
+                label_name = category_name_mapping.get(label_id, "알 수 없음")
 
                 # 바운딩 박스 그리기
                 draw.rectangle([(x_min, y_min), (x_max, y_max)], outline="red", width=3)
