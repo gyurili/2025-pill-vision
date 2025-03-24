@@ -148,3 +148,4 @@ data/test_images/
 models/*.pth
 
 wandb/
+data/kaggle

@@ -7,7 +7,7 @@ from models.faster_rcnn import get_faster_rcnn_model
 
 # 경로 설정
 TEST_IMAGE_DIR = "/content/drive/MyDrive/코드잇 초급 프로젝트/정리된 데이터셋/test_images"
-OUTPUT_CSV = "/content/drive/MyDrive/코드잇/초급 프로젝트/캐글 예측 결과/result.csv"
+OUTPUT_CSV = "/content/2025-health-vision/data/kaggle/result.csv"
 CHECKPOINT_PATH = "/content/drive/MyDrive/코드잇/초급 프로젝트/체크포인트/Adam_0.0001/faster_rcnn_epoch5.pth"
 
 # 모델 로드
