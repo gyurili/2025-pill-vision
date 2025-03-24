@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw, ImageFont
 from models.faster_rcnn import get_faster_rcnn_model
 from dataset import TestDataset
 
-CHECKPOINT_DIR = "/content/drive/MyDrive/코드잇/초급 프로젝트/체크포인트"
+CHECKPOINT_DIR = "/content/drive/MyDrive/코드잇/초급 프로젝트/체크포인트/Adam_0.0001/"
 SAVE_DIR = "/content/2025-health-vision/data/finish"
 CATEGORY_NAME_MAPPING_PATH = "/content/2025-health-vision/data/category_name_mapping.json"
 FONT_PATH = "/content/2025-health-vision/NanumGothic-Regular.ttf"

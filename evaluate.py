@@ -3,9 +3,10 @@ import os
 from models.faster_rcnn import get_faster_rcnn_model
 from dataset.data_loader import get_dataloaders
 from torchmetrics.detection import MeanAveragePrecision
+# pip install torchmetrics
 from torchvision.ops import box_iou
 
-CHECKPOINT_DIR = "/content/drive/MyDrive/코드잇/초급 프로젝트/체크포인트"
+CHECKPOINT_DIR = "/content/drive/MyDrive/코드잇/초급 프로젝트/체크포인트/Adam_0.0001/"
 CSV_PATH = "/content/2025-health-vision/data/image_annotations.csv"
 IMAGE_DIR = "/content/drive/MyDrive/코드잇 초급 프로젝트/정리된 데이터셋/train_images"
 

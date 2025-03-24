@@ -140,9 +140,11 @@ pyrightconfig.json
 # System files
 .DS_Store 
 
-# 데이터 폴더 무시
+# 프로젝트 추가 설정
 data/train_images/
 data/train_annotations/
 data/test_images/
 
 models/*.pth
+
+wandb/

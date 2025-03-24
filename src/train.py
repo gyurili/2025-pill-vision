@@ -1,32 +1,51 @@
 import torch
 import torch.optim as optim
+import wandb  # W&B 추가
 import os
 from models.faster_rcnn import get_faster_rcnn_model
 from dataset.data_loader import get_dataloaders
+
+# W&B 프로젝트 설정
+wandb.init(project="faster-rcnn-tuning", name="exp_lr_opt", config={})
 
 # 체크포인트 경로
 CHECKPOINT_DIR = "/content/drive/MyDrive/코드잇/초급 프로젝트/체크포인트"
 os.makedirs(CHECKPOINT_DIR, exist_ok=True)
 
-# Google Drive에서 가장 최신 체크포인트 찾기
-def find_latest_checkpoint():
-    checkpoint_files = [f for f in os.listdir(CHECKPOINT_DIR) if f.startswith("faster_rcnn_epoch") and f.endswith(".pth")]
+# 최신 체크포인트 확인 (실험별 폴더에서 찾기)
+def find_latest_checkpoint(optimizer_name, lr):
+    """해당 optimizer와 learning rate 조합의 최신 체크포인트 찾기"""
+    experiment_folder = os.path.join(CHECKPOINT_DIR, f"{optimizer_name}_{lr}")
+    if not os.path.exists(experiment_folder):
+        return None, 0  # 폴더가 없으면 처음부터 시작
+
+    checkpoint_files = [f for f in os.listdir(experiment_folder) if f.startswith("faster_rcnn_epoch") and f.endswith(".pth")]
     if not checkpoint_files:
-        return None, 0  # 체크포인트 없으면면 처음부터 학습
+        return None, 0  # 체크포인트 파일이 없으면 처음부터 시작
 
     checkpoint_files.sort(key=lambda x: int(x.split("epoch")[1].split(".pth")[0]), reverse=True)
-    
-    latest_checkpoint = os.path.join(CHECKPOINT_DIR, checkpoint_files[0])
+    latest_checkpoint = os.path.join(experiment_folder, checkpoint_files[0])
     latest_epoch = int(checkpoint_files[0].split("epoch")[1].split(".pth")[0])
-    
     return latest_checkpoint, latest_epoch
 
-def train(model, train_loader, val_loader, num_epochs, lr=0.0001, device="cuda"):
+# 모델 학습
+def train(model, train_loader, val_loader, num_epochs, optimizer_name="Adam", lr=0.0001, device="cuda"):
     model.to(device)
-    optimizer = optim.Adam(model.parameters(), lr=lr)
 
-    # 가장 최신 체크포인트 확인
-    latest_checkpoint, start_epoch = find_latest_checkpoint()
+    # 옵티마이저 설정
+    if optimizer_name == "Adam":
+        optimizer = optim.Adam(model.parameters(), lr=lr)
+    elif optimizer_name == "SGD":
+        optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+    else:
+        raise ValueError("지원되지 않는 옵티마이저")
+
+    # 실험별 체크포인트 폴더 생성
+    experiment_folder = os.path.join(CHECKPOINT_DIR, f"{optimizer_name}_{lr}")
+    os.makedirs(experiment_folder, exist_ok=True)
+
+    wandb.config.update({"optimizer": optimizer_name, "learning_rate": lr}, allow_val_change=True)
+    latest_checkpoint, start_epoch = find_latest_checkpoint(optimizer_name, lr)
     
     if latest_checkpoint:
         print(f"[INFO] 최신 체크포인트 {latest_checkpoint}에서 학습을 이어서 시작합니다.")
@@ -41,7 +60,7 @@ def train(model, train_loader, val_loader, num_epochs, lr=0.0001, device="cuda")
         total_loss = 0
         print(f"[INFO] Epoch {epoch+1}/{num_epochs} 시작")
         
-        for step, (images, targets, _) in enumerate(train_loader):  
+        for step, (images, targets, _) in enumerate(train_loader):
             if step % 20 == 0:
                 print(f"[INFO] Step {step+1}/{len(train_loader)} 진행 중...")  
             
@@ -54,14 +73,21 @@ def train(model, train_loader, val_loader, num_epochs, lr=0.0001, device="cuda")
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
-        
+
+            # W&B 로깅 (20 step마다)
+            if step % 20 == 0:
+                wandb.log({"loss": loss.item()})
+
         avg_loss = total_loss / len(train_loader)
         loss_history.append(avg_loss)
 
-        print(f"Epoch {epoch+1}/{num_epochs}, Loss: {avg_loss:.4f} (Classifier: {loss_dict['loss_classifier'].item():.4f}, BoxReg: {loss_dict['loss_box_reg'].item():.4f}, Obj: {loss_dict['loss_objectness'].item():.4f}, RPN: {loss_dict['loss_rpn_box_reg'].item():.4f})")
+        print(f"Epoch {epoch+1}/{num_epochs}, Loss: {avg_loss:.4f}")
         
-        # 체크포인트 저장
-        checkpoint_path = os.path.join(CHECKPOINT_DIR, f"faster_rcnn_epoch{epoch+1}.pth")
+        # W&B에 로그 저장
+        wandb.log({"epoch": epoch+1, "avg_loss": avg_loss})
+
+        # 실험별 폴더에 체크포인트 저장
+        checkpoint_path = os.path.join(experiment_folder, f"faster_rcnn_epoch{epoch+1}.pth")
         torch.save(model.state_dict(), checkpoint_path)
         print(f"[INFO] Model checkpoint saved at {checkpoint_path}")
 
