@@ -4,6 +4,7 @@ import json
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from torchvision import transforms
+from torchvision.ops import nms  # NMS 함수 추가
 from PIL import Image
 from models.faster_rcnn import get_faster_rcnn_model
 
@@ -53,6 +54,11 @@ for img_file in image_files:
     if len(filtered_boxes) == 0:
         print(f"{img_file}: 0.3 이상인 bbox 없음")
         continue
+
+    # NMS로로 중복된 박스 제거
+    keep = nms(torch.tensor(filtered_boxes), torch.tensor(filtered_scores), iou_threshold=0.5)
+    filtered_boxes = filtered_boxes[keep]
+    filtered_scores = filtered_scores[keep]
 
     # 시각화
     fig, ax = plt.subplots(1, figsize=(8, 10))

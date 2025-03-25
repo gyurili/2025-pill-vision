@@ -3,6 +3,7 @@ import torch
 import pandas as pd
 import json
 from torchvision import transforms
+from torchvision.ops import nms  # NMS 함수 추가
 from PIL import Image
 from models.faster_rcnn import get_faster_rcnn_model
 
@@ -43,11 +44,14 @@ for img_file in image_files:
     with torch.no_grad():
         predictions = model(image_tensor)[0]
 
+    # NMS로 중복 예측 제거
+    keep = nms(predictions["boxes"], predictions["scores"], iou_threshold=0.5)  # IOU threshold를 0.5로 설정
+
     # category_id별 최고 score만 유지
     best_predictions = {}
 
     # 결과 저장
-    for i in range(len(predictions["boxes"])):
+    for i in keep:
         bbox = predictions["boxes"][i].cpu().numpy()
         model_category_id = int(predictions["labels"][i].cpu().numpy())
         score = float(predictions["scores"][i].cpu().numpy())
