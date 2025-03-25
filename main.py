@@ -5,7 +5,7 @@ from torch.optim.lr_scheduler import LambdaLR
 from src import (
     device, train_model, BASE_DIR, get_loss, 
     predict_and_visualize_dataset, CLASS_NAMES,
-    evaluate_map
+    evaluate_map, generate_submission_csv
 )
 from models import DeformableDETR
 from dataset import get_dataloaders, TestDataset
@@ -33,12 +33,12 @@ TEST_DIR = BASE_DIR / "data/test_images"
 
 if __name__ == "__main__":
     # 모델 초기화
-    model = DeformableDETR().to(device).float()
-    # model.load_state_dict(torch.load('model.pth'))
+    model = DeformableDETR(num_layers=3).to(device).float()
+    model.load_state_dict(torch.load('model_3.pth'))
 
     # 옵티마이저 및 스케줄러 설정
     optimizer = torch.optim.AdamW(
-        model.parameters(), lr=1e-4, weight_decay=1e-2
+        model.parameters(), lr=1e-6, weight_decay=1e-2
     )
 
     # 데이터 로더 생성
@@ -48,37 +48,44 @@ if __name__ == "__main__":
     test_dataset = TestDataset(TEST_DIR)
 
     # 손실 함수 및 학습 설정
-    num_epochs = 100
+    num_epochs = 50
     criterion = get_loss()
     
     scheduler = custom_warmup_cosine_scheduler(
         optimizer,
         total_epochs=num_epochs,
-        warmup_ratio=0.1,
-        peak_ratio=0.5,
+        warmup_ratio=0,
+        peak_ratio=0.1,
         warmup_pow=3.0  # 곡선형 증가
     )   
 
-    # 모델 학습
-    model, train_loss_history, val_loss_history = train_model(
-        model, criterion, train_loader, val_loader, optimizer, scheduler, num_epochs
-    )
-
-    # 학습 및 검증 손실 그래프 출력
-    plt.figure(figsize=(8, 6))
-    plt.plot(range(1, num_epochs + 1), train_loss_history, marker="o", linestyle="-", label="Train Loss")
-    plt.plot(range(1, num_epochs + 1), val_loss_history, marker="s", linestyle="-", label="Val Loss")
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss")
-    plt.title("Training & Validation Loss Over Epochs")
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+    # # 모델 학습
+    # model, train_loss_history, val_loss_history = train_model(
+    #     model, criterion, train_loader, val_loader, optimizer, scheduler, num_epochs
+    # )
     
-    # 모델 평가 mAP@50
-    evaluate_map(model, val_loader, device)
+    # 모델 평가 mAP@0.5
+    evaluate_map(model, val_loader, class_names=CLASS_NAMES)
+    
+    # generate_submission_csv(
+    #     model=model,
+    #     test_dataset=test_dataset,
+    #     output_path="submission.csv",
+    #     threshold=0.5  # or 원하는 confidence 임계값
+    # )
+    
+    # # 학습 및 검증 손실 그래프 출력
+    # plt.figure(figsize=(8, 6))
+    # plt.plot(range(1, num_epochs + 1), train_loss_history, marker="o", linestyle="-", label="Train Loss")
+    # plt.plot(range(1, num_epochs + 1), val_loss_history, marker="s", linestyle="-", label="Val Loss")
+    # plt.xlabel("Epoch")
+    # plt.ylabel("Loss")
+    # plt.title("Training & Validation Loss Over Epochs")
+    # plt.legend()
+    # plt.grid(True)
+    # plt.show()
 
     # 예측 및 시각화 실행
     predict_and_visualize_dataset(
-        model, test_dataset, device, CLASS_NAMES, threshold=0.5, num_samples=5
+        model, test_dataset, CLASS_NAMES, threshold=0.5, num_samples=5
     )

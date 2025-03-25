@@ -77,7 +77,7 @@ def train_model(model, criterion, train_loader, val_loader, optimizer, scheduler
         if scheduler is not None:
             scheduler.step()
 
-        torch.save(model.state_dict(), "model_6.pth")
+        torch.save(model.state_dict(), "model_3.pth")
 
     print("\nTraining completed.")
     return model, train_loss_history, val_loss_history

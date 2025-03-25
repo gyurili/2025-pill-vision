@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from dataset import convert_bbox_format
+from src.config import device
 
 # ===========================
 # 한글 폰트 설정 (운영체제별 선택)
@@ -87,7 +88,7 @@ def draw_bboxes_plt(image, boxes, labels, scores, class_names=None, threshold=0.
     plt.show()
 
 
-def predict_and_visualize_dataset(model, test_dataset, device, class_names=None, threshold=0.5, num_samples=5):
+def predict_and_visualize_dataset(model, test_dataset, class_names=None, threshold=0.5, num_samples=5):
     """
     모델로 테스트 이미지 예측 후 시각화 (matplotlib + 한글 대응).
     """

@@ -1,10 +1,12 @@
 from pycocotools.cocoeval import COCOeval
 from pycocotools.coco import COCO
-import json
 import os
-from tqdm import tqdm
+import csv
+import json
 import torch
-from src import CLASS_NAMES
+import numpy as np
+from tqdm import tqdm
+from src import CLASS_NAMES, device
 
 def convert_to_coco_format(dataset):
     coco = {
@@ -45,7 +47,7 @@ def convert_to_coco_format(dataset):
 
     return coco
 
-def get_predictions_in_coco_format(model, dataset, device, score_threshold=0.05):
+def get_predictions_in_coco_format(model, dataset, score_threshold=0.05):
     model.eval()
     predictions = []
 
@@ -76,8 +78,9 @@ def get_predictions_in_coco_format(model, dataset, device, score_threshold=0.05)
 
     return predictions
 
-def evaluate_map(model, val_loader, device):
-    val_dataset = val_loader.dataset  # 여기서 dataset 가져옴
+
+def evaluate_map(model, val_loader, class_names=None):
+    val_dataset = val_loader.dataset
 
     print("Converting ground truth to COCO format...")
     coco_gt_dict = convert_to_coco_format(val_dataset)
@@ -85,7 +88,7 @@ def evaluate_map(model, val_loader, device):
         json.dump(coco_gt_dict, f)
 
     print("Generating predictions...")
-    preds = get_predictions_in_coco_format(model, val_dataset, device)
+    preds = get_predictions_in_coco_format(model, val_dataset)
     with open("preds.json", "w") as f:
         json.dump(preds, f)
 
@@ -93,8 +96,73 @@ def evaluate_map(model, val_loader, device):
     coco_dt = coco_gt.loadRes("preds.json")
 
     coco_eval = COCOeval(coco_gt, coco_dt, iouType='bbox')
-    coco_eval.params.iouThrs = [0.5]  # mAP@50만 계산
+    coco_eval.params.iouThrs = [0.5]  # mAP@0.5만 계산
     coco_eval.evaluate()
     coco_eval.accumulate()
     coco_eval.summarize()
 
+    print("\n클래스별 mAP@50:")
+    precisions = coco_eval.eval['precision']  # shape: [iou, recall, cls, area, maxDet]
+    iou_idx = 0  # IoU=0.5
+    area_idx = 0  # area='all'
+    max_det_idx = 2  # maxDet=100
+
+    for cls_idx, cat_id in enumerate(coco_eval.params.catIds):
+        # [recall,] → 평균값 (NaN 제외)
+        precision = precisions[iou_idx, :, cls_idx, area_idx, max_det_idx]
+        mean_prec = np.nanmean(precision)
+
+        class_name = class_names[cat_id] if class_names and cat_id < len(class_names) else f"Class {cat_id}"
+        print(f"{class_name:20s} | mAP@50: {mean_prec:.3f}")
+
+
+def generate_submission_csv(model, test_dataset, output_path, threshold=0.5, orig_w=976, orig_h=1280):
+    model.eval()
+    model.to(device)
+    
+    annotation_id = 0
+    results = []
+
+    with torch.no_grad():
+        for img_tensor, file_name in tqdm(test_dataset, desc="Generating Predictions"):
+            image = img_tensor.unsqueeze(0).to(device)
+            outputs = model(image)
+
+            pred_boxes = outputs["pred_boxes"][0].cpu()  # (num_queries, 4), normalized
+            pred_logits = outputs["pred_logits"][0].cpu()
+            pred_scores = pred_logits.softmax(-1).max(-1)[0].numpy()
+            pred_labels = pred_logits.argmax(-1).numpy()
+
+            # 정규화 해제: 예측 박스 (x_min, y_min, x_max, y_max)
+            pred_boxes[:, [0, 2]] *= orig_w
+            pred_boxes[:, [1, 3]] *= orig_h
+
+            image_id = int(os.path.splitext(file_name)[0])
+
+            for box, label, score in zip(pred_boxes, pred_labels, pred_scores):
+                if score < threshold or label >= 82:
+                    continue
+
+                x_min, y_min, x_max, y_max = box.tolist()
+                bbox_w = x_max - x_min
+                bbox_h = y_max - y_min
+
+                results.append([
+                    annotation_id,
+                    image_id,
+                    label,
+                    round(x_min, 2),
+                    round(y_min, 2),
+                    round(bbox_w, 2),
+                    round(bbox_h, 2),
+                    round(float(score), 4)
+                ])
+                annotation_id += 1
+
+    # CSV 저장
+    with open(output_path, mode="w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["annotation_id", "image_id", "category_id", "bbox_x", "bbox_y", "bbox_w", "bbox_h", "score"])
+        writer.writerows(results)
+
+    print(f"CSV 저장 완료: {output_path}")

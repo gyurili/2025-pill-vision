@@ -145,5 +145,4 @@ data/train_images/
 data/train_annotations/
 data/test_images/
 
-model.pth
-model_6.pth
+*.pth
