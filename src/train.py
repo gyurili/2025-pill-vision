@@ -1,12 +1,8 @@
 import torch
 import torch.optim as optim
-import wandb  # W&B 추가
 import os
 from models.faster_rcnn import get_faster_rcnn_model
 from dataset.data_loader import get_dataloaders
-
-# W&B 프로젝트 설정
-wandb.init(project="faster-rcnn-tuning", name="exp_lr_opt", config={})
 
 # 체크포인트 경로
 CHECKPOINT_DIR = "/content/drive/MyDrive/코드잇/초급 프로젝트/체크포인트"
@@ -44,7 +40,6 @@ def train(model, train_loader, val_loader, num_epochs, optimizer_name="Adam", lr
     experiment_folder = os.path.join(CHECKPOINT_DIR, f"{optimizer_name}_{lr}")
     os.makedirs(experiment_folder, exist_ok=True)
 
-    wandb.config.update({"optimizer": optimizer_name, "learning_rate": lr}, allow_val_change=True)
     latest_checkpoint, start_epoch = find_latest_checkpoint(optimizer_name, lr)
     
     if latest_checkpoint:
@@ -74,18 +69,11 @@ def train(model, train_loader, val_loader, num_epochs, optimizer_name="Adam", lr
             optimizer.step()
             total_loss += loss.item()
 
-            # W&B 로깅 (20 step마다)
-            if step % 20 == 0:
-                wandb.log({"loss": loss.item()})
-
         avg_loss = total_loss / len(train_loader)
         loss_history.append(avg_loss)
 
         print(f"Epoch {epoch+1}/{num_epochs}, Loss: {avg_loss:.4f}")
         
-        # W&B에 로그 저장
-        wandb.log({"epoch": epoch+1, "avg_loss": avg_loss})
-
         # 실험별 폴더에 체크포인트 저장
         checkpoint_path = os.path.join(experiment_folder, f"faster_rcnn_epoch{epoch+1}.pth")
         torch.save(model.state_dict(), checkpoint_path)

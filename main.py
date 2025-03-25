@@ -21,10 +21,11 @@ if __name__ == "__main__":
 
     # 하이퍼파라미터 튜닝 실험
     optimizers = ["Adam", "SGD"]
-    learning_rates = [0.001, 0.0005, 0.0001]
+    #learning_rates = [0.001, 0.0005, 0.0001]
+    learning_rates = [0.0001, 0.001, 0.0005]
 
     for optimizer in optimizers:
         for lr in learning_rates:
             print(f"\n🔹 실험 시작: Optimizer={optimizer}, LR={lr}\n")
             model = get_faster_rcnn_model(num_classes)
-            train(model, train_loader, val_loader, num_epochs=5, optimizer_name=optimizer, lr=lr, device=device)
+            train(model, train_loader, val_loader, num_epochs=7, optimizer_name=optimizer, lr=lr, device=device)
