@@ -14,7 +14,7 @@ class DeformableAttention(nn.Module):
         self.deform_conv = nn.Conv2d(hidden_dim, hidden_dim, kernel_size=3, padding=1)
 
     def forward(self, x):
-        with autocast(device.type):
+        with autocast(device.type, dtype=torch.bfloat16):
             x = self.deform_conv(x)
             x = x.flatten(2).permute(2, 0, 1)
             x, _ = self.attn(x, x, x)
@@ -49,7 +49,7 @@ class DeformableDETR(nn.Module):
         self.fc_bbox = nn.Linear(hidden_dim, 4)
 
     def forward(self, images):
-        with autocast(device.type):
+        with autocast(device.type, dtype=torch.bfloat16):
             x = self.backbone(images)
             x = self.deform_attn(x).float()
 
