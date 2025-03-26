@@ -5,6 +5,7 @@ import csv
 import json
 import torch
 import numpy as np
+import pandas as pd
 from tqdm import tqdm
 from src import CLASS_NAMES, device
 
@@ -116,53 +117,68 @@ def evaluate_map(model, val_loader, class_names=None):
         print(f"{class_name:20s} | mAP@50: {mean_prec:.3f}")
 
 
-def generate_submission_csv(model, test_dataset, output_path, threshold=0.5, orig_w=976, orig_h=1280):
+def generate_submission_csv(model, test_dataset, category_map_path, output_csv="prediction_submission.csv",
+                             orig_image_size=(976, 1280), score_threshold=0.05):
+    """
+    모델 예측 결과를 기반으로 제출용 CSV 파일을 생성합니다.
+
+    Args:
+        model (torch.nn.Module): 학습된 객체 탐지 모델
+        test_dataset (Dataset): TestDataset 인스턴스
+        category_map_path (str): category_mapping.json 경로
+        output_csv (str): 저장할 CSV 파일명
+        orig_image_size (tuple): 원본 이미지 크기 (width, height)
+        score_threshold (float): confidence score 임계값
+    """
+    device = next(model.parameters()).device
     model.eval()
-    model.to(device)
-    
-    annotation_id = 0
+
+    # category_mapping.json 로드 및 역매핑 생성
+    with open(category_map_path, "r") as f:
+        raw_map = json.load(f)
+        inverse_map = {v: int(k) for k, v in raw_map.items()}  # 내부 idx → 원래 ID
+
     results = []
+    annotation_id = 0
 
     with torch.no_grad():
-        for img_tensor, file_name in tqdm(test_dataset, desc="Generating Predictions"):
-            image = img_tensor.unsqueeze(0).to(device)
-            outputs = model(image)
+        for i in tqdm(range(len(test_dataset))):
+            image, file_name = test_dataset[i]
+            image_id = int(file_name.split(".")[0])  # '12.png' → 12
 
-            pred_boxes = outputs["pred_boxes"][0].cpu()  # (num_queries, 4), normalized
-            pred_logits = outputs["pred_logits"][0].cpu()
-            pred_scores = pred_logits.softmax(-1).max(-1)[0].numpy()
-            pred_labels = pred_logits.argmax(-1).numpy()
+            inputs = image.unsqueeze(0).to(device)
+            outputs = model(inputs)
 
-            # 정규화 해제: 예측 박스 (x_min, y_min, x_max, y_max)
-            pred_boxes[:, [0, 2]] *= orig_w
-            pred_boxes[:, [1, 3]] *= orig_h
+            boxes = outputs["pred_boxes"][0].cpu()
+            logits = outputs["pred_logits"][0].cpu()
 
-            image_id = int(os.path.splitext(file_name)[0])
+            scores, labels = logits.softmax(-1).max(-1)
+            mask = scores > score_threshold
+            boxes = boxes[mask]
+            labels = labels[mask]
+            scores = scores[mask]
 
-            for box, label, score in zip(pred_boxes, pred_labels, pred_scores):
-                if score < threshold or label >= 82:
-                    continue
+            # 정규화 해제
+            boxes[:, [0, 2]] *= orig_image_size[0]
+            boxes[:, [1, 3]] *= orig_image_size[1]
 
+            for box, label, score in zip(boxes, labels, scores):
                 x_min, y_min, x_max, y_max = box.tolist()
-                bbox_w = x_max - x_min
-                bbox_h = y_max - y_min
+                width = x_max - x_min
+                height = y_max - y_min
 
-                results.append([
-                    annotation_id,
-                    image_id,
-                    label,
-                    round(x_min, 2),
-                    round(y_min, 2),
-                    round(bbox_w, 2),
-                    round(bbox_h, 2),
-                    round(float(score), 4)
-                ])
+                results.append({
+                    "annotation_id": annotation_id,
+                    "image_id": image_id,
+                    "category_id": inverse_map[label.item()],
+                    "bbox_x": round(x_min, 2),
+                    "bbox_y": round(y_min, 2),
+                    "bbox_w": round(width, 2),
+                    "bbox_h": round(height, 2),
+                    "score": round(score.item(), 4),
+                })
                 annotation_id += 1
 
-    # CSV 저장
-    with open(output_path, mode="w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(["annotation_id", "image_id", "category_id", "bbox_x", "bbox_y", "bbox_w", "bbox_h", "score"])
-        writer.writerows(results)
-
-    print(f"CSV 저장 완료: {output_path}")
+    df = pd.DataFrame(results)
+    df.to_csv(output_csv, index=False)
+    print(f"CSV 파일 저장 완료: {output_csv}")

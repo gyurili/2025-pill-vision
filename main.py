@@ -28,16 +28,18 @@ def custom_warmup_cosine_scheduler(
 
 # 데이터 및 모델 경로 설정
 CSV_PATH = BASE_DIR / "data/image_annotations.csv"
+JSON_PATH = BASE_DIR / "data/category_mapping.json"
 IMAGE_DIR = BASE_DIR / "data/train_images"
 TEST_DIR = BASE_DIR / "data/test_images"
 
 if __name__ == "__main__":
     # 모델 초기화
     model = DeformableDETR(num_layers=3).to(device).float()
+    model.load_state_dict(torch.load('model_3.pth'))
 
     # 옵티마이저 및 스케줄러 설정
     optimizer = torch.optim.AdamW(
-        model.parameters(), lr=1e-6, weight_decay=1e-2
+        model.parameters(), lr=1e-4, weight_decay=1e-2
     )
 
     # 데이터 로더 생성
@@ -53,8 +55,8 @@ if __name__ == "__main__":
     scheduler = custom_warmup_cosine_scheduler(
         optimizer,
         total_epochs=num_epochs,
-        warmup_ratio=0,
-        peak_ratio=0.1,
+        warmup_ratio=0.2,
+        peak_ratio=0.5,
         warmup_pow=3.0  # 곡선형 증가
     )   
 
@@ -69,9 +71,9 @@ if __name__ == "__main__":
     generate_submission_csv(
         model=model,
         test_dataset=test_dataset,
-        output_path="submission.csv",
-        threshold=0.5  # or 원하는 confidence 임계값
+        category_map_path=JSON_PATH
     )
+
     
     # 학습 및 검증 손실 그래프 출력
     plt.figure(figsize=(8, 6))
