@@ -1,41 +1,43 @@
 import matplotlib.pyplot as plt
 import cv2
-from dataset import convert_bbox_format
+import numpy as np
+import os
 
+def visualize_sample(image, prediction, file_name, save_dir="output_images"):
+    image = image.permute(1, 2, 0).cpu().numpy()  # (C, H, W) → (H, W, C)
+    image = ((image * 0.5) + 0.5) * 255  # 정규화 해제
+    image = image.astype(np.uint8)
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
-def visualize_sample(image, image_vis, target, class_id=False, bbox_convert=True):
-    """
-    바운딩 박스를 시각화하는 함수.
+    boxes = prediction["boxes"].cpu().numpy()
+    labels = prediction["labels"].cpu().numpy()
+    scores = prediction["scores"].cpu().numpy()
 
-    Args:
-        image (torch.Tensor): 모델 입력용 텐서.
-        image_vis (numpy.ndarray): 정규화 해제된 NumPy 이미지.
-        target (dict): 바운딩 박스 정보 (COCO 또는 Pascal VOC 형식).
-        class_id (bool, optional): 클래스 ID를 출력할지 여부. Defaults to False.
-        bbox_convert (bool, optional): COCO 형식을 Pascal VOC로 변환할지 여부. Defaults to True.
+    if len(boxes) == 0:
+        print(f"감지된 객체 없음: {file_name}")
+        return
+
+    for box, label, score in zip(boxes, labels, scores):
+        # 바운딩 박스를 원본 크기로 변환 (0~1 → 픽셀 크기)
+        x_min, y_min, x_max, y_max = map(int, box * np.array([640, 640, 640, 640]))
+
+        cv2.rectangle(image, (x_min, y_min), (x_max, y_max), (255, 0, 0), 2)
+        cv2.putText(image, f"Class {label} ({score:.2f})", (x_min, y_min - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+
+    # 다시 RGB로 변환 (matplotlib에서 사용하기 위함)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+    # 저장할 디렉토리 생성
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, f"prediction_{file_name}")
     
-    Returns:
-        None
-    """
-    # 바운딩 박스 및 라벨 변환
-    boxes = target["boxes"].cpu().numpy().astype(int)
-    labels = target["labels"].cpu().numpy()
-
-    if bbox_convert:
-        boxes = convert_bbox_format(boxes, to_format="pascal")
-
-    # 바운딩 박스 시각화
-    for box, label in zip(boxes, labels):
-        x_min, y_min, x_max, y_max = box
-        cv2.rectangle(image_vis, (x_min, y_min), (x_max, y_max), (255, 0, 0), 2)
-
-        if class_id:
-            class_text = f"ID {label}"
-            cv2.putText(image_vis, class_text, (x_min, y_min - 10), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2, cv2.LINE_AA)
-
-    # 이미지 출력
+    # SSH 환경에서는 `plt.show()` 대신 `savefig()` 사용
     plt.figure(figsize=(8, 8))
-    plt.imshow(image_vis)
+    plt.imshow(image)
     plt.axis("off")
-    plt.show()
+    plt.title(f"Predictions for {file_name}")
+    plt.savefig(save_path)  # 이미지 저장
+    plt.close()  # Matplotlib 리소스 해제
+    
+    print(f"저장 완료: {save_path}")
