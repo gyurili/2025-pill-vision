@@ -35,7 +35,7 @@ TEST_DIR = BASE_DIR / "data/test_images"
 if __name__ == "__main__":
     # 모델 초기화
     model = DeformableDETR(num_layers=3).to(device).float()
-    model.load_state_dict(torch.load('model_3.pth'))
+    # model.load_state_dict(torch.load('model_3.pth'))
 
     # 옵티마이저 및 스케줄러 설정
     optimizer = torch.optim.AdamW(

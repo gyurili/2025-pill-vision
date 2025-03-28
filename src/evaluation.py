@@ -2,6 +2,7 @@ from pycocotools.cocoeval import COCOeval
 from pycocotools.coco import COCO
 import os
 import csv
+import time
 import json
 import torch
 import numpy as np
@@ -82,6 +83,7 @@ def get_predictions_in_coco_format(model, dataset, score_threshold=0.05):
 
 def evaluate_map(model, val_loader, class_names=None):
     val_dataset = val_loader.dataset
+    num_images = len(val_dataset)
 
     print("Converting ground truth to COCO format...")
     coco_gt_dict = convert_to_coco_format(val_dataset)
@@ -89,10 +91,20 @@ def evaluate_map(model, val_loader, class_names=None):
         json.dump(coco_gt_dict, f)
 
     print("Generating predictions...")
+    start_time = time.time()
     preds = get_predictions_in_coco_format(model, val_dataset)
+    end_time = time.time()
+
     with open("preds.json", "w") as f:
         json.dump(preds, f)
 
+    # FPS 계산
+    total_time = end_time - start_time
+    fps = num_images / total_time if total_time > 0 else 0
+    print(f"\n[Inference Time] {total_time:.2f} seconds for {num_images} images")
+    print(f"[FPS] {fps:.2f} images/second")
+
+    # COCO 평가
     coco_gt = COCO("gt.json")
     coco_dt = coco_gt.loadRes("preds.json")
 
@@ -109,13 +121,12 @@ def evaluate_map(model, val_loader, class_names=None):
     max_det_idx = 2  # maxDet=100
 
     for cls_idx, cat_id in enumerate(coco_eval.params.catIds):
-        # [recall,] → 평균값 (NaN 제외)
         precision = precisions[iou_idx, :, cls_idx, area_idx, max_det_idx]
         mean_prec = np.nanmean(precision)
 
         class_name = class_names[cat_id] if class_names and cat_id < len(class_names) else f"Class {cat_id}"
         print(f"{class_name:20s} | mAP@50: {mean_prec:.3f}")
-
+        
 
 def generate_submission_csv(model, test_dataset, category_map_path, output_csv="prediction_submission.csv",
                              orig_image_size=(976, 1280), score_threshold=0.05):
