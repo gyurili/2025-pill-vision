@@ -8,9 +8,12 @@ sys.path.append(project_dir)
 from models.RetinaNet.retinanet_func import *
 from dataset.data_loader import get_dataloaders
 from dataset.pill_dataset import TestDataset
+
+
 def main():
     paths = setup_paths()
     train_loader, val_loader, test_loader = setup_dataloaders(paths, batch_size=8)
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
     
     checkpoint_path = 'C:/Users/user/OneDrive/Deesktop/codeit_Pr_1/final_model.pth'
@@ -37,8 +40,9 @@ def main():
         
         lr_scheduler.step()
     
-        model.load_state_dict(torch.load("best_model.pth"))
+    model.load_state_dict(torch.load("best_model.pth"))
     test_model(model, test_loader, device)
     
 if __name__ == '__main__':
     main()
+
