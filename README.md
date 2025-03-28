@@ -100,10 +100,3 @@ AI Hub에서 데이터를 직접 다운로드한 경우 다음과 같은 전처�
 ## 🔗 데이터 출처
 - 본 프로젝트는 AI Hub에서 제공하는 공개 데이터셋을 활용하였습니다.
 - 데이터셋 링크: [AI Hub - 의약품 이미지 객체 검출](https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&dataSetSn=576)
-
-## 🚀 후속 개발 계획
-- [x] 데이터셋 전처리 (이미지 크기 통일, 증강 등)
-- [x] 모델 구현 및 학습 (YOLOv12n)
-- [ ] 기타 모델 브랜치 병합 및 결과 정리
-- [ ] 성능 평가 및 리포트 작성
-- [ ] ONNX 또는 TensorRT로 배포
