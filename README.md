@@ -13,7 +13,7 @@
 - RetinaNet
 - Cascade R-CNN
 - Deformable DETR
-- EfficientNet
+- SDD
 
 ---
 
@@ -21,77 +21,55 @@
 
 ```
 2025-HEALTH-VISION/
-├── .github/                 # GitHub 관련 설정 파일
-├── data/                   # 데이터 디렉터리 (GitHub에는 포함되어 있지 않음)
-│   ├── test_images/        # 테스트 이미지 (로컬에서 직접 다운로드 필요)
-│   ├── train_images/       # 학습 이미지 (로컬에서 직접 다운로드 필요)
-│   ├── train_annotations/  # 학습 어노테이션 (로컬에서 직접 다운로드 필요)
-│   ├── category_mapping.json
-│   ├── category_name_mapping.json
-│   ├── image_annotations.csv
-│
-├── dataset/
+├── .github/                # GitHub 관련 설정 파일
+├── data/                   # 실제 데이터는 GitHub에 포함되어 있지 않으며,
+│   └── data.txt            # Google Drive 내 데이터 공유 링크가 담긴 텍스트 파일만 존재함
+├── data_process/           # YOLO 학습용 데이터 전처리 스크립트 모음
+│   ├── data_processing.py  # 고유한 카테고리 값으로 데이터 필터링 수행
+│   ├── data_yaml.py        # YOLO 학습용 data.yaml 경로 설정 파일 생성
+│   ├── main.py             # 모든 전처리 스크립트를 순차 실행
+│   ├── make_labels.py      # YOLO 형식의 annotation TXT 파일 생성
+│   └── move_files.py       # train/val 이미지 폴더 생성 및 분할
+├── dataset/                # 데이터셋 구성 모듈
+│   ├── __init__.py
 │   ├── data_loader.py
-│   ├── pill_dataset.py
-│
-├── models/
-│   ├── model1.py           # YOLOv12n 기반 모델
-│
-├── notebooks/
-│   ├── data_preprocessing.ipynb
-│
-├── src/
-│   ├── config.py
-│   ├── train.py
-│   ├── visualization.py
-│
-├── environment.yml
-├── main.py
-├── test.py
-├── README.md
+│   └── pill_dataset.py
+├── models/                 # 모델 학습, 평가 및 튜닝 스크립트
+│   ├── evaluate.py         # 테스트 이미지 기반 성능 평가 (CSV 결과 생성)
+│   ├── model_main.py       # 모델 관련 전체 실행 스크립트 (wandb 연동 필요)
+│   ├── train.py            # 학습 실행
+│   └── tuning.py           # 하이퍼파라미터 튜닝
+├── notebooks/              # Jupyter 노트북
+│   └── data_preprocessing.ipynb
+├── src/                    # 설정 및 유틸 모듈
+│   ├── __init__.py
+│   └── config.py           # 프로젝트의 현재 작업 디렉토리를 main 기준으로 설정
+├── environment.yml         # Conda 환경 설정 파일
+├── image_annotations.csv   # 전처리된 주석 CSV
+├── README.md               # 프로젝트 문서
 ```
 
----
-
-### 📁 main 브랜치 구성 설명
-
-- `data/` 폴더: 실제 학습과 테스트에 사용되는 이미지 및 어노테이션 데이터가 포함됨 (직접 다운로드 필요)
-- `data_process/` 폴더: YOLO 학습용 데이터 전처리 스크립트 모음
-  - `data_processing.py`: 고유한 카테고리 값으로 데이터 필터링 수행
-  - `data_yaml.py`: YOLO 학습용 `data.yaml` 경로 설정 파일 생성
-  - `make_labels.py`: YOLO 형식의 annotation TXT 파일 생성
-  - `move_files.py`: train/val 이미지 폴더 생성 및 분할
-  - `main.py`: 위 전처리 코드들을 순차 실행하는 통합 스크립트
-- `data.yaml`: YOLO 학습을 위한 경로 설정 파일 생성
-- `make_labels.py`: YOLO 형식의 annotation TXT 파일 생성
-- `move_files.py`: train/val 이미지 폴더 생성 및 분할
-- `main.py`: 위 전처리 코드들을 순차 실행하는 통합 스크립트
-
-📁 `models/` 폴더
-- `train.py`: 학습 실행
-- `evaluate.py`: 테스트 이미지 기반 성능 평가 (CSV 결과 생성)
-- `tuning.py`: 하이퍼파라미터 튜닝 코드
-- `model_main.py`: 모델 관련 코드 전체 실행 스크립트
-
-📁 `src/` 폴더
-- `config.py`: 현재 경로를 main 디렉터리 기준으로 고정
-
-
-📝 주의 사항
 - `model_main.py` 실행 시 **wandb 계정 연동 필요** (로그인 필요)
 
 ---
 
 ## 🔧 사용 방법
 
-### 1️⃣ 라이브러리 설치
+### 1️⃣ GitHub 저장소 클론
+
+```bash
+git clone https://github.com/your-username/2025-health-vision.git
+cd 2025-health-vision
+```
+
+### 2️⃣ 라이브러리 설치
 
 ```bash
 conda env create -f environment.yml
 conda activate health-vision
 ```
 
-### 2️⃣ 전처리 실행
+### 3️⃣ 전처리 실행
 
 데이터를 준비한 후, 아래 명령어를 통해 YOLO 학습을 위한 전처리를 자동으로 실행합니다:
 
@@ -99,22 +77,13 @@ conda activate health-vision
 python data_process/main.py   # data_process 폴더 내 스크립트들 자동 실행
 ```
 
-### 3️⃣ 모델 학습 및 평가
+### 4️⃣ 모델 학습 및 평가
 
 ```bash
 python models/model_main.py   # train.py, evaluate.py 등 실행
 ```
 
 ※ 이때 wandb 계정 연동이 필요할 수 있으므로 계정 정보를 미리 준비해주세요.
-
-
----
-
-## 📈 예시 이미지 정보
-
-- 파일: `K-003544-012247-016548-021026_0_2_0_2_70_000_200.png`
-- 라벨: `무코스타정(레바미피드)(비매품)`
-- 바운딩 박스: `[623, 870, 217, 213]`
 
 ---
 
