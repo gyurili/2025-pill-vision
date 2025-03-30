@@ -1,4 +1,4 @@
-name: myenv
+name: health-vision
 channels:
   - pytorch
   - defaults
@@ -20,4 +20,11 @@ dependencies:
       - torchsummary
       - tensorboard
       - opencv-python
-      - albumentations  # 데이터 증강 라이브러리 추가
+      - os
+      - sys
+      - csv
+      - shutil
+      - yaml
+      - wandb
+      - ultralytics
+      - optuna
