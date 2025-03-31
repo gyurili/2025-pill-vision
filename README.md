@@ -2,10 +2,10 @@
 
 ## 📖 프로젝트 개요
 
-이 프로젝트는 다양한 배경과 각도에서 촬영된 정상 알약 이미지와 COCO 형식의 정보(이미지 및 바운딩 박스)를 통해, 다음의 **총 6가지 Object Detection 모델**을 활용하여 개체 탐지 및 클래스 예측 모델을 구현하는 프로젝트입니다.
+이 프로젝트는 다양한 배경과 각도에서 찾아내지는 정상 알약 이미지와 COCO 형식의 정보(이미지 및 바운딩 벅스)를 통해, 다음의 **총 6가지 Object Detection 모델**을 활용하여 개체 탐지 및 클래스 예측 모델을 구현하는 프로젝트입니다.
 
-각 모델의 성능을 실험적으로 비교한 후, 가장 성능이 우수했던 **YOLOv12n** 모델을 `main` 브랜치에 적용하였습니다. 나머지 모델들의 코드는 각각 별도 브랜치에 구현되어 있습니다.
-각 브런치에 구현되어 있는 모델들은 코드 중심으로 구성되어 있으며, 부가적인 설명은 상대적으로 적은 편입니다.
+각 모델의 성능을 시험적으로 비교한 후, 가장 성능이 우수했던 **YOLOv12n** 모델을 `main` 브런치에 적용하였습니다.  
+나머지 모델들은 각각 별도 브런치에 구현되어 있게 설계되어 있으며, **코드 중심으로 구성되어 문서화나 가이드는 적은 편입니다.**
 
 ### 사용한 모델 목록:
 
@@ -18,41 +18,35 @@
 
 ---
 
-## 📂 폴더 구성 및 main 브랜치 구조 설명
+## 📂 포른 구성
 
 ```
 2025-HEALTH-VISION/
-├── .github/                # GitHub 관련 설정 파일
-├── data/                   # 실제 데이터는 GitHub에 포함되어 있지 않으며,
-│   └── data.txt            # Google Drive 내 데이터 공유 링크가 담긴 텍스트 파일만 존재함
-├── data_process/           # YOLO 학습용 데이터 전처리 스크립트 모음
-│   ├── data_processing.py  # 고유한 카테고리 값으로 데이터 필터링 수행
-│   ├── data_yaml.py        # YOLO 학습용 data.yaml 경로 설정 파일 생성
-│   ├── main.py             # 모든 전처리 스크립트를 순차 실행
-│   ├── make_labels.py      # YOLO 형식의 annotation TXT 파일 생성
-│   └── move_files.py       # train/val 이미지 폴더 생성 및 분할
-├── dataset/                # 데이터셋 구성 모듈
-│   ├── __init__.py
-│   ├── data_loader.py
-│   └── pill_dataset.py
-├── models/                 # 모델 학습, 평가 및 튜닝 스크립트
-│   ├── evaluate.py         # 테스트 이미지 기반 성능 평가 (CSV 결과 생성)
-│   ├── model_main.py       # 모델 관련 전체 실행 스크립트 (wandb 연동 필요)
-│   ├── train.py            # 학습 실행
-│   └── tuning.py           # 하이퍼파라미터 튜닝
-├── notebooks/              # Jupyter 노트북
-│   └── data_preprocessing.ipynb
-├── src/                    # 설정 및 유틸 모듈
-│   ├── __init__.py
-│   └── config.py           # 프로젝트의 현재 작업 디렉토리를 main 기준으로 설정
-├── main.py                 # 사용자에게 이미지 경로를 받아 알약 탐지 실행
-├── test.py                 # test 이미지로 예측하고 결과를 시각화
-├── environment.yml         # Conda 환경 설정 파일
-├── image_annotations.csv   # 전처리된 주석 CSV
-├── README.md               # 프로젝트 문서
+├── .github/                     # GitHub 관련 설정 파일
+├── data/                        # 실제 데이터는 GitHub에 포함되지 않으며,
+│   └── data.txt                 # Google Drive 내 데이터 공유 링크가 담긴 텍스트 파일만 존재
+├── data_process/                # YOLO 학습용 데이터 전처리 스크립트 모음
+│   ├── data_processing.py       # 고유한 카테고리 값으로 데이터 필터링 수행
+│   ├── data_yaml.py             # YOLO 학습용 data.yaml 경로 설정 파일 생성
+│   ├── main.py                  # 모든 전처리 스크립트를 순차 실행
+│   ├── make_labels.py           # YOLO 형식의 annotation TXT 파일 생성
+│   └── move_files.py            # train/val 이미지 폴더 생성 및 분할
+├── models/                      # 모델 학습, 평가 및 튜닉 스크립트
+│   ├── evaluate.py              # 테스트 이미지 기반 성능 평가 (CSV 결과 생성)
+│   ├── model_main.py            # 모델 관련 전체 실행 스크립트 (wandb 연동 필요)
+│   ├── train.py                 # 학습 실행
+│   └── tuning.py                # 하이퍼파리터 튜닉
+├── notebooks/                   # Jupyter 노트북
+│   └── data_preprocessing.ipynb # 데이터 전처리 코드 모음
+├── src/                         # 설정 및 유틸 모듈
+│   ├── __init__.py              # src 폴더 모듈화
+│   └── config.py                # 프로젝트의 현재 작업 디렉토리를 main 기준으로 설정
+├── main.py                      # 사용자에게 이미지 경로를 받아 알약 탐지 실행
+├── test.py                      # test 이미지로 예측하고 결과를 시각화
+├── environment.yml              # Conda 환경 설정 파일
+├── image_annotations.csv        # 전처리된 주석 CSV
+├── README.md                    # 프로젝트 문서
 ```
-
-- `model_main.py` 실행 시 **wandb 계정 연동 필요** (로그인 필요)
 
 ---
 
@@ -74,54 +68,49 @@ conda activate health-vision
 
 ### 3️⃣ 전처리 실행
 
-데이터를 준비한 후, 아래 명령어를 통해 YOLO 학습을 위한 전처리를 자동으로 실행합니다:
+데이터를 준비한 후, 다음 명령어를 통해 YOLO 학습을 위한 전처리를 자동으로 실행합니다:
 
 ```bash
-python data_process/main.py   # data_process 폴더 내 스크립트들 자동 실행
+python data_process/main.py
 ```
 
 ### 4️⃣ 모델 학습 및 평가
 
 ```bash
-python models/model_main.py   # train.py, evaluate.py 등 실행
+python models/model_main.py
 ```
 
 ※ 이때 wandb 계정 연동이 필요할 수 있으므로 계정 정보를 미리 준비해주세요.
 
 ---
 
-## 🧼 데이터 전처리 안내
+## 🩼 데이터 전처리 안내
 
 AI Hub에서 데이터를 직접 다운로드한 경우 다음과 같은 전처리 과정을 거쳐야 합니다:
 
 1. **이미지 통합 정리**
+   - 다운로드된 원본 이미지들은 여러 개의 하위 폴더에 나누어 저장되어 있습니다.
+   - `notebooks/data_preprocessing.ipynb` 파일에 포함된 코드를 실행해 **하나의 폴더로 통합**합니다.
 
-   - 다운로드된 원본 이미지들은 여러 개의 하위 폴더에 나뉘어 저장되어 있습니다.
-   - `notebooks/data_preprocessing.ipynb` 파일에 포함된 코드를 실행하여 **하나의 폴더로 통합**합니다.
-
-2. **JSON 어노테이션 수정**
-
+2. **JSON 어노티션 수정**
    - 원본 JSON 파일은 형식 오류가 있거나 모델 학습에 맞지 않게 구성되어 있을 수 있습니다.
    - 노트북 파일 내 수정 코드를 실행해 **올바른 포맷으로 정제**합니다.
 
 3. **손상된 이미지 제거**
-
    - 일부 이미지 파일은 깨져 있거나 열 수 없는 경우가 있습니다.
    - 이를 자동으로 감지하여 제거하는 코드가 노트북에 포함되어 있습니다.
 
 4. **CSV 변환**
-
-   - 수정된 JSON 어노테이션을 COCO 형식 대신 **CSV 포맷**으로 변환하는 코드도 함께 제공됩니다.
+   - 수정된 JSON 어노티션을 COCO 형식 대신 **CSV 포맷**으로 변환하는 코드도 함께 제공됩니다.
 
 5. **YOLOv12 전용 전처리 실행**
-
-   - 해당 코드를 실행하여 YOLO모델에 맞는 데이터 형식으로 변환합니다.
+   - `data_process/main.py`를 실행하면, 학습에 필요한 YOLO 형식의 데이터 구성 파일들 (TXT, YAML 등)이 자동으로 생성됩니다.
 
 ```bash
-python data_process/main.py   # data_process 폴더 내 스크립트들 자동 실행
+python data_process/main.py
 ```
 
-5번을 제외한 모든 코드는 `notebooks/data_preprocessing.ipynb`에서 순차적으로 실행할 수 있습니다.
+5번을 제외한 모든 전처리 코드는 `notebooks/data_preprocessing.ipynb`에서 순차적으로 실행할 수 있습니다.
 
 ---
 
