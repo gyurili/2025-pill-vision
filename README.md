@@ -41,7 +41,7 @@
 ├── src/                         # 설정 및 유틸 모듈
 │   ├── __init__.py              # src 폴더 모듈화
 │   └── config.py                # 프로젝트의 현재 작업 디렉토리를 main 기준으로 설정
-├── main.py                      # data_main & model_main 실행행
+├── main.py                      # data_main & model_main 실행
 ├── visualization.py             # 예측된 결과 시각화 코드
 ├── environment.yml              # Conda 환경 설정 파일
 ├── image_annotations.csv        # 전처리된 주석 CSV
