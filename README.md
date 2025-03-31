@@ -118,3 +118,9 @@ python data_process/main.py
 
 - 본 프로젝트는 AI Hub에서 제공하는 공개 데이터셋을 활용하였습니다.
 - 데이터셋 링크: [AI Hub - 의약품 이미지 객체 검출](https://aihub.or.kr/aihubdata/data/view.do?currMenu=115\&topMenu=100\&dataSetSn=576)
+
+---
+
+## 📷 이미지 예시
+
+![alt text](image_example.png)
