@@ -41,8 +41,7 @@
 ├── src/                         # 설정 및 유틸 모듈
 │   ├── __init__.py              # src 폴더 모듈화
 │   └── config.py                # 프로젝트의 현재 작업 디렉토리를 main 기준으로 설정
-├── main.py                      # 사용자에게 이미지 경로를 받아 알약 탐지 실행 (미구현)
-├── test.py                      # test 이미지로 예측하고 결과를 시각화 (미구현)
+├── main.py                      # 전체 코드 실행
 ├── environment.yml              # Conda 환경 설정 파일
 ├── image_annotations.csv        # 전처리된 주석 CSV
 ├── README.md                    # 프로젝트 문서
@@ -67,18 +66,10 @@ conda env create -f environment.yml
 conda activate health-vision
 ```
 
-### 3️⃣ 전처리 실행
-
-데이터를 준비한 후, 다음 명령어를 통해 YOLO 학습을 위한 전처리를 자동으로 실행합니다:
+### 3️⃣ 코드 실행
 
 ```bash
-python data_process/main.py
-```
-
-### 4️⃣ 모델 학습 및 평가
-
-```bash
-python models/model_main.py
+python main.py
 ```
 
 ※ 이때 wandb 계정 연동이 필요할 수 있으므로 계정 정보를 미리 준비해주세요.
@@ -104,14 +95,7 @@ AI Hub에서 데이터를 직접 다운로드한 경우 다음과 같은 전처�
 4. **CSV 변환**
    - 수정된 JSON 어노티션을 COCO 형식 대신 **CSV 포맷**으로 변환하는 코드도 함께 제공됩니다.
 
-5. **YOLOv12 전용 전처리 실행**
-   - `data_process/main.py`를 실행하면, 학습에 필요한 YOLO 형식의 데이터 구성 파일들 (TXT, YAML 등)이 자동으로 생성됩니다.
-
-```bash
-python data_process/main.py
-```
-
-5번을 제외한 모든 전처리 코드는 `notebooks/data_preprocessing.ipynb`에서 순차적으로 실행할 수 있습니다.
+모든 전처리 코드는 `notebooks/data_preprocessing.ipynb`에서 순차적으로 실행할 수 있습니다.
 
 ---
 
