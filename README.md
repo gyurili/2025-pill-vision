@@ -35,7 +35,7 @@
 │   ├── evaluate.py              # 테스트 이미지 기반 성능 평가 (CSV 결과 생성)
 │   ├── model_main.py            # 모델 관련 전체 실행 스크립트 (wandb 연동 필요)
 │   ├── train.py                 # 학습 실행
-│   └── tuning.py                # 하이퍼파리터 튜닉
+│   └── tuning.py                # 하이퍼파리터 튜닝
 ├── notebooks/                   # Jupyter 노트북
 │   └── data_preprocessing.ipynb # 데이터 전처리 코드 모음
 ├── src/                         # 설정 및 유틸 모듈
