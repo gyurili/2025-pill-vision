@@ -6,21 +6,13 @@ import yaml
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-# 현재 파일의 경로를 기준으로 main 폴더를 찾도록 설정
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))  # main 폴더 경로
-sys.path.append(BASE_DIR)  # main 폴더를 sys.path에 추가
-        
-# src 폴더의 config.py 가져오기
-from src import set_main_dir
-set_main_dir()
-
 # data 폴더 내부의 모듈 import
-from data_processing import *
-from make_labels import new_label
-from move_files import *
-from data_yaml import write_data_yaml
+from data_process.data_processing import *
+from data_process.make_labels import new_label
+from data_process.move_files import *
+from data_process.data_yaml import write_data_yaml
 
-def main():
+def data_main():
     # annotation 경로 가져오기
     annotation_path = os.path.join(os.getcwd(), "image_annotations.csv")
     train_images_source = os.path.join(os.getcwd(), "train_images")  # 원본 학습 이미지 경로
@@ -63,6 +55,3 @@ def main():
     data_path = os.path.join(os.getcwd(), "yolov12")
     write_data_yaml(data_path, drug_name)
 
-if __name__ == "__main__":
-    set_main_dir()
-    main()
