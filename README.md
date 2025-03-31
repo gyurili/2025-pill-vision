@@ -28,7 +28,7 @@
 ├── data_process/                # YOLO 학습용 데이터 전처리 스크립트 모음
 │   ├── data_processing.py       # 고유한 카테고리 값으로 데이터 필터링 수행
 │   ├── data_yaml.py             # YOLO 학습용 data.yaml 경로 설정 파일 생성
-│   ├── main.py                  # 모든 전처리 스크립트를 순차 실행
+│   ├── data_main.py             # 모든 전처리 스크립트를 순차 실행
 │   ├── make_labels.py           # YOLO 형식의 annotation TXT 파일 생성
 │   └── move_files.py            # train/val 이미지 폴더 생성 및 분할
 ├── models/                      # 모델 학습, 평가 및 튜닉 스크립트
