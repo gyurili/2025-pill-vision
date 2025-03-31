@@ -46,6 +46,7 @@
 ├── environment.yml              # Conda 환경 설정 파일
 ├── image_annotations.csv        # 전처리된 주석 CSV
 ├── README.md                    # 프로젝트 문서
+├── image_example.png            # 예시 이미지지
 ```
 
 ---
