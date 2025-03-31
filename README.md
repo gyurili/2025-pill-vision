@@ -80,7 +80,7 @@ python main.py
 ### 4️⃣ 시각화 코드 실행
 
 ```bash
-python visualization.py --idx 62
+python visualization.py --idx 62 # 원하는 테스트 이미지 파일명을 인자로 전달
 ```
 
 원하는 테스트 이미지의 시각화 결과를 확인할 수 있습니다.
