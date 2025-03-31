@@ -5,7 +5,7 @@
 이 프로젝트는 다양한 배경과 각도에서 촬영된 정상 알약 이미지와 COCO 형식의 정보(이미지 및 바운딩 박스)를 통해, 다음의 **총 6가지 Object Detection 모델**을 활용하여 개체 탐지 및 클래스 예측 모델을 구현하는 프로젝트입니다.
 
 각 모델의 성능을 실험적으로 비교한 후, 가장 성능이 우수했던 **YOLOv12n** 모델을 `main` 브랜치에 적용하였습니다. 나머지 모델들의 코드는 각각 별도 브랜치에 구현되어 있습니다.
-단 정말 코드만이 존재하며 별도의 설명이 부실합니다.
+각 브런치에 구현되어 있는 모델들은 코드 중심으로 구성되어 있으며, 부가적인 설명은 상대적으로 적은 편입니다.
 
 ### 사용한 모델 목록:
 
@@ -14,7 +14,7 @@
 - RetinaNet
 - Cascade R-CNN
 - Deformable DETR
-- SDD
+- SSD
 
 ---
 
@@ -45,6 +45,8 @@
 ├── src/                    # 설정 및 유틸 모듈
 │   ├── __init__.py
 │   └── config.py           # 프로젝트의 현재 작업 디렉토리를 main 기준으로 설정
+├── main.py                 # 사용자에게 이미지 경로를 받아 알약 탐지 실행
+├── test.py                 # test 이미지로 예측하고 결과를 시각화
 ├── environment.yml         # Conda 환경 설정 파일
 ├── image_annotations.csv   # 전처리된 주석 CSV
 ├── README.md               # 프로젝트 문서
@@ -111,7 +113,15 @@ AI Hub에서 데이터를 직접 다운로드한 경우 다음과 같은 전처�
 
    - 수정된 JSON 어노테이션을 COCO 형식 대신 **CSV 포맷**으로 변환하는 코드도 함께 제공됩니다.
 
-모든 코드는 `notebooks/data_preprocessing.ipynb`에서 순차적으로 실행할 수 있습니다.
+5. **YOLOv12 전용 전처리 실행**
+
+   - 해당 코드를 실행하여 YOLO모델에 맞는 데이터 형식으로 변환합니다.
+
+```bash
+python data_process/main.py   # data_process 폴더 내 스크립트들 자동 실행
+```
+
+5번을 제외한 모든 코드는 `notebooks/data_preprocessing.ipynb`에서 순차적으로 실행할 수 있습니다.
 
 ---
 
