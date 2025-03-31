@@ -13,6 +13,9 @@ set_main_dir()
 # 데이터 처리 및 모델 관련 모듈 임포트
 from data_process.data_main import data_main
 from models.model_main import model_main
+from models.evaluate import visualize_bboxes
+from src.config import TEST_IMAGE_PATH, TEST_LABELS_PATH
+
 
 
 if __name__ == "__main__":
@@ -20,3 +23,4 @@ if __name__ == "__main__":
     data_main()
     # 모델 학습 및 평가 실행
     model_main()
+    visualize_bboxes(TEST_IMAGE_PATH,TEST_LABELS_PATH)
