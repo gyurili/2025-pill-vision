@@ -41,12 +41,12 @@
 ├── src/                         # 설정 및 유틸 모듈
 │   ├── __init__.py              # src 폴더 모듈화
 │   └── config.py                # 프로젝트의 현재 작업 디렉토리를 main 기준으로 설정
-├── main.py                      # 사용자에게 이미지 경로를 받아 알약 탐지 실행
-├── test.py                      # test 이미지로 예측하고 결과를 시각화
+├── main.py                      # 사용자에게 이미지 경로를 받아 알약 탐지 실행 (미구현)
+├── test.py                      # test 이미지로 예측하고 결과를 시각화 (미구현)
 ├── environment.yml              # Conda 환경 설정 파일
 ├── image_annotations.csv        # 전처리된 주석 CSV
 ├── README.md                    # 프로젝트 문서
-├── image_example.png            # 예시 이미지지
+├── image_example.png            # 예시 이미지
 ```
 
 ---
@@ -122,6 +122,6 @@ python data_process/main.py
 
 ---
 
-## 📷 이미지 예시
+## 📷 예측 결과 예시
 
 ![alt text](image_example.png)
