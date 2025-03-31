@@ -41,7 +41,8 @@
 ├── src/                         # 설정 및 유틸 모듈
 │   ├── __init__.py              # src 폴더 모듈화
 │   └── config.py                # 프로젝트의 현재 작업 디렉토리를 main 기준으로 설정
-├── main.py                      # 전체 코드 실행
+├── main.py                      # data_main & model_main 실행행
+├── visualization.py             # 예측된 결과 시각화 코드
 ├── environment.yml              # Conda 환경 설정 파일
 ├── image_annotations.csv        # 전처리된 주석 CSV
 ├── README.md                    # 프로젝트 문서
@@ -66,13 +67,23 @@ conda env create -f environment.yml
 conda activate health-vision
 ```
 
-### 3️⃣ 코드 실행
+### 3️⃣ 학습 코드 실행
 
 ```bash
 python main.py
 ```
 
 ※ 이때 wandb 계정 연동이 필요할 수 있으므로 계정 정보를 미리 준비해주세요.
+
+메인 코드를 실행하면 모델 학습 이후 테스트 폴더 이미지의 예측 결과를 CSV파일로 정리하여 저장합니다.
+
+### 4️⃣ 시각화 코드 실행
+
+```bash
+python visualization.py --idx 62
+```
+
+원하는 테스트 이미지의 시각화 결과를 확인할 수 있습니다.
 
 ---
 
