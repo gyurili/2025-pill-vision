@@ -4,9 +4,9 @@ import torch
 import os
 import sys
 # 필요한 모듈 import
-from tuning import objective
-from train import train
-from evaluate import evaluate
+from models.tuning import objective
+from models.train import train
+from models.evaluate import evaluate
 from src.config import TEST_IMAGE_PATH
 
 

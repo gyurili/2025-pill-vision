@@ -7,10 +7,10 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 # data 폴더 내부의 모듈 import
-from data_processing import *
-from make_labels import new_label
-from move_files import *
-from data_yaml import write_data_yaml
+from data_process.data_processing import *
+from data_process.make_labels import new_label
+from data_process.move_files import *
+from data_process.data_yaml import write_data_yaml
 
 def data_main():
     # annotation 경로 가져오기
