@@ -1,4 +1,4 @@
-# 📌 Pill Detection with Object Detection Models
+# 📌 Pill Detection with Object Detection Models 
 
 ## 📖 프로젝트 개요
 
